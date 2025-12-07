@@ -416,6 +416,13 @@ const bgMessageListener = function(msgRaw) {
             updateTimerResults(timerCount, timerResults);
 
             break;
+        case "cryptoDetectResult":
+            const cryptoCount = msgBody.count;
+            const cryptoResults = msgBody.results;
+
+            updateCryptoResults(cryptoCount, cryptoResults);
+
+            break;
         case "queryFunctionResult":
             if (typeof msgBody.bytes !== "object") {
                 return true;

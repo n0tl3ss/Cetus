@@ -5,3 +5,27 @@ body {
     width: 460px;
     color: #fff;
 }
+
+/* Popup-specific tabs overflow handling */
+.tabs {
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+}
+
+/* Prevent flex items from shrinking so horizontal scroll shows all tabs */
+.tabs-item {
+    flex: 0 0 auto;
+}
+
+/* Optional: show a thin horizontal scrollbar for clarity in narrow popups */
+.tabs::-webkit-scrollbar {
+    height: 6px;
+}
+.tabs::-webkit-scrollbar-thumb {
+    background: var(--grayInactive);
+    border-radius: 3px;
+}
+.tabs::-webkit-scrollbar-track {
+    background: transparent;
+}

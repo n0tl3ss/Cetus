@@ -1086,7 +1086,7 @@ class Cetus {
         const mem = this.unalignedMemory();
 
         let stride = parseInt(strideBytes);
-        if (isNaN(stride) || stride < 8) stride = 8; // minimum DES block size
+        if (isNaN(stride) || stride < 16) stride = 16; // minimum stride for speed
 
         let lb = parseInt(lowerBound);
         let ub = parseInt(upperBound);
@@ -1099,7 +1099,7 @@ class Cetus {
         const results = [];
         const sbox = this._aesSBox();
 
-        for (let addr = lb; addr + 32 <= ub; addr += stride) {
+        outer: for (let addr = lb; addr + 32 <= ub; addr += stride) {
             // AES S-Box table detection (exact 256-byte sequence)
             if (addr + 256 <= ub) {
                 let match = true;
@@ -1108,6 +1108,7 @@ class Cetus {
                 }
                 if (match) {
                     results.push({ addr, len: 256, entropy: this._entropy(mem.slice(addr, addr + 256)), tag: 'aes_sbox' });
+                    if (results.length >= 200) break outer;
                 }
             }
 
@@ -1123,6 +1124,7 @@ class Cetus {
                 if (sz === 8) threshold = 6.5;
                 if (H >= threshold) {
                     results.push({ addr, len: sz, entropy: H });
+                    if (results.length >= 200) break outer;
                 }
             }
         }
