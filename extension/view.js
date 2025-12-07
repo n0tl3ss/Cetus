@@ -590,20 +590,23 @@ const saveButtonClick = function(e) {
 	extension.addBookmark(address, memType);
 };
 
-const createValueInput = function(address, value) {
+const createValueInput = function(address, value, memType) {
 	const valueInput = document.createElement('input');
 	valueInput.name = 'bookmarkInput';
 	valueInput.type = 'text';
-	valueInput.value = value;
+	// Ensure proper string rendering for BigInt and hex values
+	valueInput.value = (typeof value === 'bigint') ? value.toString() : String(value);
 	valueInput.className = 'table-input';
 	valueInput.onchange = valueInputChange;
 	valueInput.setAttribute('address', address);
+	valueInput.setAttribute('memType', memType);
 
 	return valueInput;
 };
 
 const valueInputChange = function(e) {
-	const memType = extension.searchMemType;
+	// Prefer the bookmark's own memType; fall back to current search type
+	const memType = event.currentTarget.getAttribute('memType') || extension.searchMemType;
 
 	extension.sendBGMessage('modifyMemory', {
 		memAddr: event.currentTarget.getAttribute('address'),
@@ -1373,7 +1376,7 @@ const updateBookmarkTable = function(bookmarks, wpFlags) {
 
 		const formattedValue = formatValue(value, memType);
 
-		const valueInput = createValueInput(address, formattedValue);
+		const valueInput = createValueInput(address, formattedValue, memType);
 		cell.appendChild(valueInput);
 
         if (wpFlags & ENABLE_WP_WRITE) {

@@ -294,10 +294,10 @@ class Cetus {
 
         if (Object.keys(this._searchSubset).length == 0) {
             for (let i = lowerBoundIndex; i < upperBoundIndex; i++) {
-                if (comparator(memory[i], this._savedMemory[i]) == true) {
+                if (comparator(memory[i], this._savedMemory[i - lowerBoundIndex]) == true) {
                     const realAddress = indexToRealAddress(i, memType);
                     this._searchSubset[realAddress] = memory[i];
-                    baselineMap[realAddress] = this._savedMemory[i];
+                    baselineMap[realAddress] = this._savedMemory[i - lowerBoundIndex];
                 }
             }
         }
@@ -306,17 +306,16 @@ class Cetus {
                 const entryIndex = realAddressToIndex(entryAddr, memType);
                 if (entryIndex < lowerBoundIndex ||
                     entryIndex > upperBoundIndex ||
-                    comparator(memory[entryIndex], this._savedMemory[entryAddr]) == false) {
+                    comparator(memory[entryIndex], this._savedMemory[entryIndex - lowerBoundIndex]) == false) {
                     delete this._searchSubset[entryAddr];
                 }
                 else {
                     this._searchSubset[entryAddr] = memory[entryIndex];
-                    baselineMap[entryAddr] = this._savedMemory[entryAddr];
+                    baselineMap[entryAddr] = this._savedMemory[entryIndex - lowerBoundIndex];
                 }
             }
         }
 
-        this._savedMemory = this._searchSubset;
 
         const searchObj = {};
 

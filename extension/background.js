@@ -801,10 +801,13 @@ chrome.runtime.onMessage.addListener(function(msgRaw, msgSender) {
             const value = msgBody.value;
             const memType = msgBody.memType;
 
-            if (typeof address !== "number" ||
-                typeof value !== "number" ||
-                !isValidMemType(memType)) {
-                console.warn("Got bad queryMemoryResult: address " + address + " value " + value);
+            // Accept BigInt for i64, Number for others
+            if (typeof address !== "number" || !isValidMemType(memType)) {
+                return true;
+            }
+            const valueTypeOk = (typeof value === "number") || (typeof value === "bigint");
+            if (!valueTypeOk) {
+                console.warn("Got bad queryMemoryResult: address " + address + " value " + value + " type " + typeof value);
                 return true;
             }
 
@@ -812,6 +815,7 @@ chrome.runtime.onMessage.addListener(function(msgRaw, msgSender) {
                 return true;
             }
 
+            // Store raw value (can be number or bigint). UI will format appropriately.
             targetWindow.currentInstance().instanceData.bookmarks[address].value = value;
             targetWindow.currentInstance().updateBookmarks();
 

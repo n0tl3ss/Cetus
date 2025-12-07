@@ -15,11 +15,22 @@ limitations under the License.
 */
 
 const toHex = function(i) {
-	return '0x' + parseInt(i).toString(16).padStart(8, '0');
+    if (typeof i === 'bigint') {
+        // Preserve full precision for 64-bit values
+        return '0x' + i.toString(16).padStart(8, '0');
+    }
+    // Fallback for numbers/strings
+    const n = (typeof i === 'number') ? i : parseInt(i);
+    return '0x' + (isNaN(n) ? 0 : n).toString(16).padStart(8, '0');
 };
 
 const toHexByte = function(i) {
-	return parseInt(i).toString(16).padStart(2, '0');
+    if (typeof i === 'bigint') {
+        const n = Number(i & 0xffn);
+        return n.toString(16).padStart(2, '0');
+    }
+    const n = (typeof i === 'number') ? i : parseInt(i);
+    return (isNaN(n) ? 0 : (n & 0xff)).toString(16).padStart(2, '0');
 };
 
 // This function controls how values are displayed to the user
@@ -43,11 +54,20 @@ const formatValue = function(value, memType) {
 };
 
 const formatInteger = function(value) {
-    if (value > 0x1000) {
-        return toHex(value);
+    if (typeof value === 'bigint') {
+        // Use hex for larger absolute values to match existing UX
+        const threshold = 0x1000n;
+        const absVal = (value < 0n) ? -value : value;
+        if (absVal > threshold) {
+            return toHex(value);
+        }
+        return value; // small BigInt: render as bigint
+    } else {
+        if (value > 0x1000) {
+            return toHex(value);
+        }
+        return value;
     }
-
-    return value;
 };
 
 const storageSet = function(valueObj) {
