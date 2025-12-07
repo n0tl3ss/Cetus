@@ -58,6 +58,14 @@ document.getElementById('restartBtn').onclick = function(e) {
     if (typeof window !== 'undefined') {
         window._cetusDiffActive = false;
         window._cetusDiffSnapTaken = false;
+        window._cetusDiffBaseline = undefined;
+        window._cetusDiffBaselineSet = false;
+    }
+    if (typeof window !== 'undefined') {
+        window._cetusDiffActive = false;
+        window._cetusDiffSnapTaken = false;
+        window._cetusDiffBaseline = undefined;
+        window._cetusDiffBaselineSet = false;
     }
     const dt = document.getElementById('diffResultsTitle');
     const dr = document.getElementById('diffResults');
@@ -870,7 +878,7 @@ const disableSearchFormAlignment = function() {
     }
 };
 
-const updateSearchResults = function(resultCount, resultObject, resultMemType) {
+const updateSearchResults = function(resultCount, resultObject, resultMemType, baselineObj) {
 	document.getElementById('resultsTitle').innerText = resultCount + ' results';
 	document.getElementById('restartBtn').disabled = false;
 
@@ -884,6 +892,8 @@ const updateSearchResults = function(resultCount, resultObject, resultMemType) {
 	cell = row.insertCell();
 	cell.innerText = 'Value';
 	cell = row.insertCell();
+    cell.innerText = 'Baseline';
+    cell = row.insertCell();
 
 	const tbody = table.createTBody();
 
@@ -907,6 +917,20 @@ const updateSearchResults = function(resultCount, resultObject, resultMemType) {
 			cell.innerText = formatValue(value, resultMemType);
         }
 
+		// Baseline column (if provided during diff)
+        cell = row.insertCell();
+        if (baselineObj && typeof baselineObj[address] !== 'undefined') {
+            const baseVal = baselineObj[address];
+            if (bigintIsNaN(baseVal)) {
+                cell.innerText = baseVal;
+            } else {
+                cell.innerText = formatValue(baseVal, resultMemType);
+            }
+        } else {
+            cell.innerText = '';
+        }
+
+        // Save button
 		cell = row.insertCell();
 		const saveButton = createSaveButton(address);
 		cell.appendChild(saveButton);
@@ -924,7 +948,7 @@ const updateSearchResults = function(resultCount, resultObject, resultMemType) {
 };
 
 // Diff tab results mirroring of search results during diff workflow
-const updateDiffResults = function(resultCount, resultObject, resultMemType) {
+const updateDiffResults = function(resultCount, resultObject, resultMemType, baselineObj) {
     document.getElementById('diffResultsTitle').innerText = resultCount + ' results';
 
     const table = document.createElement('table');
@@ -936,6 +960,8 @@ const updateDiffResults = function(resultCount, resultObject, resultMemType) {
     cell.innerText = 'Address';
     cell = row.insertCell();
     cell.innerText = 'Value';
+    cell = row.insertCell();
+    cell.innerText = 'Baseline';
     cell = row.insertCell();
 
     const tbody = table.createTBody();
@@ -956,6 +982,20 @@ const updateDiffResults = function(resultCount, resultObject, resultMemType) {
             cell.innerText = formatValue(value, resultMemType);
         }
 
+        // Baseline column (if available)
+        cell = row.insertCell();
+        if (baselineObj && typeof baselineObj[address] !== 'undefined') {
+            const baseVal = baselineObj[address];
+            if (bigintIsNaN(baseVal)) {
+                cell.innerText = baseVal;
+            } else {
+                cell.innerText = formatValue(baseVal, resultMemType);
+            }
+        } else {
+            cell.innerText = '';
+        }
+
+        // Save button
         cell = row.insertCell();
         const saveButton = createSaveButton(address);
         cell.appendChild(saveButton);

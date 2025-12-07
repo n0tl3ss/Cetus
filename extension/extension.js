@@ -363,12 +363,23 @@ const bgMessageListener = function(msgRaw) {
                 return true;
             }
 
-            // Always update the Search tab
-            updateSearchResults(resultCount, resultObject, resultMemType);
+            // Initialize/maintain diff baseline captured on first snapshot result
+            let baselineObj = undefined;
+            if (typeof window !== "undefined" && window._cetusDiffActive) {
+                if (!window._cetusDiffBaselineSet) {
+                    // First diff result after Snapshot: store baseline mapping
+                    window._cetusDiffBaseline = resultObject;
+                    window._cetusDiffBaselineSet = true;
+                }
+                baselineObj = window._cetusDiffBaseline;
+            }
 
-            // If Diff workflow is active, mirror results into the Diff tab
+            // Update the Search tab (pass baseline if available)
+            updateSearchResults(resultCount, resultObject, resultMemType, baselineObj);
+
+            // If Diff workflow is active, mirror results into the Diff tab with baseline
             if (typeof window !== "undefined" && window._cetusDiffActive && typeof updateDiffResults === "function") {
-                updateDiffResults(resultCount, resultObject, resultMemType);
+                updateDiffResults(resultCount, resultObject, resultMemType, baselineObj);
             }
 
             break;
