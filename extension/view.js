@@ -217,6 +217,36 @@ document.getElementById('timerForm') && (document.getElementById('timerForm').on
     document.getElementById('timerResultsTitle').innerText = 'Detecting...';
 });
 
+document.getElementById('cryptoForm') && (document.getElementById('cryptoForm').onsubmit = function(e) {
+    e.preventDefault();
+
+    const form = document.getElementById('cryptoForm');
+
+    let stride = parseInt(form.stride.value);
+    let lower = form.lower.value;
+    let upper = form.upper.value;
+
+    if (bigintIsNaN(stride)) stride = 16;
+    if (lower == '' || bigintIsNaN(lower)) {
+        lower = 0;
+    }
+    if (upper == '' || bigintIsNaN(upper)) {
+        upper = 0xffffffff;
+    }
+
+    // Minimum stride of 8 (DES key size), prefer multiples of 8
+    if (stride < 8) stride = 8;
+
+    extension.sendBGMessage('detectCrypto', {
+        stride: stride,
+        lower: lower,
+        upper: upper
+    });
+
+    document.getElementById('cryptoResultsTitle').innerText = 'Detecting...';
+});
+
+
 document.getElementById('functionFormSearch').onsubmit = function(e) {
 	e.preventDefault();
 
@@ -823,6 +853,64 @@ const updateTimerResults = function(resultCount, resultObject) {
 
     document.getElementById('timerResults').innerHTML = '';
     document.getElementById('timerResults').appendChild(table);
+
+    const buttons = document.getElementsByName('saveBtn');
+    for (let i = 0; i < buttons.length; i++) {
+        const button = buttons[i];
+        button.onclick = saveButtonClick;
+    }
+}
+
+const updateCryptoResults = function(resultCount, resultObject) {
+    document.getElementById('cryptoResultsTitle').innerText = resultCount + ' candidates';
+
+    // Crypto candidates are byte sequences; saving bookmarks as i8 anchors the start address
+    extension.searchMemType = 'i8';
+
+    const table = document.createElement('table');
+    const thead = table.createTHead();
+
+    let row = thead.insertRow();
+    let cell = row.insertCell();
+    cell.innerText = 'Address';
+
+    cell = row.insertCell();
+    cell.innerText = 'Len';
+
+    cell = row.insertCell();
+    cell.innerText = 'Entropy';
+
+    cell = row.insertCell();
+
+    const tbody = table.createTBody();
+
+    for (const address of Object.keys(resultObject)) {
+        const entry = resultObject[address];
+        if (address == null || entry == null) {
+            continue;
+        }
+
+        const len = typeof entry.len === 'number' ? entry.len : '';
+        const entropy = typeof entry.entropy === 'number' ? entry.entropy : null;
+
+        row = tbody.insertRow();
+
+        cell = row.insertCell();
+        cell.innerText = toHex(address);
+
+        cell = row.insertCell();
+        cell.innerText = len;
+
+        cell = row.insertCell();
+        cell.innerText = (typeof entropy === 'number' && isFinite(entropy)) ? entropy.toFixed(3) : '';
+
+        cell = row.insertCell();
+        const saveButton = createSaveButton(address);
+        cell.appendChild(saveButton);
+    }
+
+    document.getElementById('cryptoResults').innerHTML = '';
+    document.getElementById('cryptoResults').appendChild(table);
 
     const buttons = document.getElementsByName('saveBtn');
     for (let i = 0; i < buttons.length; i++) {

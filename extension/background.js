@@ -314,6 +314,7 @@ class WindowInstance {
         this.pendingStringSearch = false;
         this.pendingFunctionIndex = null;
         this.pendingTimerDetect = false;
+        this.pendingCryptoDetect = false;
     }
 
     _popupConnect() {
@@ -472,6 +473,20 @@ class WindowInstance {
                     });
 
                     targetWindow.pendingTimerDetect = true;
+
+                    break;
+                case "detectCrypto":
+                    const cStride = msgBody.stride;
+                    const cLower = msgBody.lower;
+                    const cUpper = msgBody.upper;
+
+                    currentInstance.sendContentMessage("detectCrypto", {
+                        stride: cStride,
+                        lower: cLower,
+                        upper: cUpper
+                    });
+
+                    targetWindow.pendingCryptoDetect = true;
 
                     break;
                 case "queryFunction":
@@ -894,6 +909,29 @@ chrome.runtime.onMessage.addListener(function(msgRaw, msgSender) {
             targetWindow.passthruPopupMessage(msg);
 
             targetWindow.pendingTimerDetect = false;
+
+            break;
+        case "cryptoDetectResult":
+            if (!targetWindow.pendingCryptoDetect) {
+                return true;
+            }
+
+            const cCount = msgBody.count;
+            const cResults = msgBody.results;
+
+            if (typeof cCount !== "number" || typeof cResults !== "object") {
+                return true;
+            }
+
+            for (let entry in cResults) {
+                if (bigintIsNaN(entry)) {
+                    return true;
+                }
+            }
+
+            targetWindow.passthruPopupMessage(msg);
+
+            targetWindow.pendingCryptoDetect = false;
 
             break;
         case "queryFunctionResult":

@@ -107,6 +107,7 @@ const changeTab = function(id) {
             document.getElementById('tabBookmarks').style.display = 'none';
             document.getElementById('tabMemView').style.display = 'none';
             document.getElementById('tabTimers').style.display = 'block';
+            document.getElementById('tabCrypto').style.display = 'none';
 
             document.getElementById('liTabSearch').className = 'tabs-item';
             document.getElementById('liTabStrings').className = 'tabs-item';
@@ -115,6 +116,27 @@ const changeTab = function(id) {
             document.getElementById('liTabBookmarks').className = 'tabs-item';
             document.getElementById('liTabMemView').className = 'tabs-item';
             document.getElementById('liTabTimers').className = 'tabs-item is-active';
+            document.getElementById('liTabCrypto').className = 'tabs-item';
+
+            break;
+        case "tabCryptoButton":
+            document.getElementById('tabSearch').style.display = 'none';
+            document.getElementById('tabStrings').style.display = 'none';
+            document.getElementById('tabPatch').style.display = 'none';
+            document.getElementById('tabSpeedHack').style.display = 'none';
+            document.getElementById('tabBookmarks').style.display = 'none';
+            document.getElementById('tabMemView').style.display = 'none';
+            document.getElementById('tabTimers').style.display = 'none';
+            document.getElementById('tabCrypto').style.display = 'block';
+
+            document.getElementById('liTabSearch').className = 'tabs-item';
+            document.getElementById('liTabStrings').className = 'tabs-item';
+            document.getElementById('liTabPatch').className = 'tabs-item';
+            document.getElementById('liTabSpeedHack').className = 'tabs-item';
+            document.getElementById('liTabBookmarks').className = 'tabs-item';
+            document.getElementById('liTabMemView').className = 'tabs-item';
+            document.getElementById('liTabTimers').className = 'tabs-item';
+            document.getElementById('liTabCrypto').className = 'tabs-item is-active';
 
             break;
         case "tabMemViewButton":
