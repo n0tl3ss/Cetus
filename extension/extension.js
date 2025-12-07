@@ -409,6 +409,13 @@ const bgMessageListener = function(msgRaw) {
             updateStringSearchResults(strResultCount, strResultObj);
 
             break;
+        case "timerDetectResult":
+            const timerCount = msgBody.count;
+            const timerResults = msgBody.results;
+
+            updateTimerResults(timerCount, timerResults);
+
+            break;
         case "queryFunctionResult":
             if (typeof msgBody.bytes !== "object") {
                 return true;

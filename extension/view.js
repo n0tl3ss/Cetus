@@ -183,6 +183,40 @@ document.getElementById('stringForm').onsubmit = function(e) {
 	});
 };
 
+document.getElementById('timerForm') && (document.getElementById('timerForm').onsubmit = function(e) {
+    e.preventDefault();
+
+    const form = document.getElementById('timerForm');
+
+    let duration = parseFloat(form.duration.value);
+    let stride = parseInt(form.stride.value);
+    let lower = form.lower.value;
+    let upper = form.upper.value;
+
+    if (bigintIsNaN(duration)) duration = 1.5;
+    if (bigintIsNaN(stride)) stride = 32;
+
+    if (lower == '' || bigintIsNaN(lower)) {
+        lower = 0;
+    }
+
+    if (upper == '' || bigintIsNaN(upper)) {
+        upper = 0xffffffff;
+    }
+
+    // Ensure sane stride
+    if (stride < 4) stride = 4;
+
+    extension.sendBGMessage('detectTimers', {
+        duration: duration,
+        stride: stride,
+        lower: lower,
+        upper: upper
+    });
+
+    document.getElementById('timerResultsTitle').innerText = 'Detecting...';
+});
+
 document.getElementById('functionFormSearch').onsubmit = function(e) {
 	e.preventDefault();
 
@@ -726,6 +760,75 @@ const updateStringSearchResults = function(resultCount, resultObject) {
 
 	document.getElementById('stringResults').innerHTML = '';
 	document.getElementById('stringResults').appendChild(table);
+}
+
+const updateTimerResults = function(resultCount, resultObject) {
+    document.getElementById('timerResultsTitle').innerText = resultCount + ' candidates';
+
+    // Timer candidates are f32 by default
+    extension.searchMemType = 'f32';
+
+    const table = document.createElement('table');
+    const thead = table.createTHead();
+
+    let row = thead.insertRow();
+    let cell = row.insertCell();
+    cell.innerText = 'Address';
+
+    cell = row.insertCell();
+    cell.innerText = 'Value';
+
+    cell = row.insertCell();
+    cell.innerText = 'Rate/s';
+
+    cell = row.insertCell();
+    cell.innerText = 'Behavior';
+
+    cell = row.insertCell();
+
+    const tbody = table.createTBody();
+
+    for (const address of Object.keys(resultObject)) {
+        const entry = resultObject[address];
+        if (address == null || entry == null) {
+            continue;
+        }
+
+        const value = typeof entry === 'object' && entry !== null && typeof entry.value !== 'undefined' ? entry.value : entry;
+        const rate = typeof entry === 'object' && entry !== null && typeof entry.rate !== 'undefined' ? entry.rate : null;
+        const behavior = typeof entry === 'object' && entry !== null && typeof entry.behavior === 'string' ? entry.behavior : '';
+
+        row = tbody.insertRow();
+
+        cell = row.insertCell();
+        cell.innerText = toHex(address);
+
+        cell = row.insertCell();
+        if (bigintIsNaN(value)) {
+            cell.innerText = value;
+        } else {
+            cell.innerText = formatValue(value, 'f32');
+        }
+
+        cell = row.insertCell();
+        cell.innerText = (typeof rate === 'number' && isFinite(rate)) ? rate.toFixed(3) : '';
+
+        cell = row.insertCell();
+        cell.innerText = behavior;
+
+        cell = row.insertCell();
+        const saveButton = createSaveButton(address);
+        cell.appendChild(saveButton);
+    }
+
+    document.getElementById('timerResults').innerHTML = '';
+    document.getElementById('timerResults').appendChild(table);
+
+    const buttons = document.getElementsByName('saveBtn');
+    for (let i = 0; i < buttons.length; i++) {
+        const button = buttons[i];
+        button.onclick = saveButtonClick;
+    }
 }
 
 const updateBookmarkTable = function(bookmarks, wpFlags) {

@@ -769,6 +769,108 @@ class Cetus {
 
         return results;
     }
+
+    async detectTimers(durationSec = 1.5, strideBytes = 32, lowerBound = 0, upperBound = 0xFFFFFFFF) {
+        // Heuristic: sample aligned f32 values, wait duration, compute rate/s,
+        // keep addresses near +/- 1.0 per second
+        const memTypeStr = "f32";
+        const elemSize = getElementSize(memTypeStr);
+
+        // Normalize inputs
+        let stride = parseInt(strideBytes);
+        if (isNaN(stride) || stride < elemSize) {
+            stride = elemSize;
+        }
+        // Ensure stride is multiple of element size (4 bytes)
+        stride -= (stride % elemSize);
+
+        let lb = parseInt(lowerBound);
+        let ub = parseInt(upperBound);
+
+        if (isNaN(lb) || lb < 0) lb = 0;
+
+        const memSizeBytes = this.getMemorySize();
+        if (isNaN(ub) || ub >= memSizeBytes) {
+            ub = memSizeBytes - 1;
+        }
+
+        // Align lower bound for aligned scan
+        lb -= (lb % elemSize);
+
+        // Snapshot 1
+        const mem = this.alignedMemory(memTypeStr);
+
+        const startValues = {};
+        for (let addr = lb; addr <= ub; addr += stride) {
+            const idx = realAddressToIndex(addr, memTypeStr);
+            if (idx < 0 || idx >= mem.length) {
+                continue;
+            }
+            const v = mem[idx];
+            if (Number.isFinite(v)) {
+                startValues[addr] = v;
+            }
+        }
+
+        const t0 = (typeof performance !== "undefined" && typeof performance.now === "function")
+            ? performance.now()
+            : Date.now();
+
+        const ms = Math.max(50, Math.floor(parseFloat(durationSec) * 1000));
+        await new Promise((res) => setTimeout(res, ms));
+
+        const t1 = (typeof performance !== "undefined" && typeof performance.now === "function")
+            ? performance.now()
+            : Date.now();
+
+        const dt = Math.max(0.001, (t1 - t0) / 1000.0);
+
+        const candidates = [];
+
+        // Snapshot 2 and rate calc
+        for (const addrStr of Object.keys(startValues)) {
+            const addr = parseInt(addrStr);
+            const idx = realAddressToIndex(addr, memTypeStr);
+            if (idx < 0 || idx >= mem.length) {
+                continue;
+            }
+
+            const v0 = startValues[addr];
+            const v1 = mem[idx];
+
+            if (!Number.isFinite(v1)) continue;
+
+            const rate = (v1 - v0) / dt;
+
+            const diffUp = Math.abs(rate - 1.0);
+            const diffDown = Math.abs(rate + 1.0);
+
+            // 15% tolerance around 1.0/s
+            const tol = 0.15;
+            if (diffUp <= tol || diffDown <= tol) {
+                const behavior = (diffUp <= diffDown) ? "up(+1/s)" : "down(-1/s)";
+                const score = Math.min(diffUp, diffDown);
+                candidates.push({ addr, value: v1, rate, behavior, score });
+            }
+        }
+
+        // Sort by closeness to +/-1.0
+        candidates.sort((a, b) => a.score - b.score);
+
+        // Cap results to avoid flooding UI
+        const MAX_RESULTS = 200;
+        const top = candidates.slice(0, MAX_RESULTS);
+
+        const results = {};
+        for (const c of top) {
+            results[c.addr] = { value: c.value, rate: c.rate, behavior: c.behavior };
+        }
+
+        return {
+            count: top.length,
+            results: results
+        };
+    }
 }
 
 class SpeedHack {
@@ -1006,6 +1108,20 @@ window.addEventListener("cetusMsgOut", function(msgRaw) {
             cetus.sendExtensionMessage("stringSearchResult", {
                 count: strResultsCount,
                 results: strResults,
+            });
+
+            break;
+        case "detectTimers":
+            const detDuration = parseFloat(msgBody.duration);
+            const detStride = parseInt(msgBody.stride);
+            const detLower = msgBody.lower;
+            const detUpper = msgBody.upper;
+
+            cetus.detectTimers(detDuration, detStride, detLower, detUpper).then(function(res) {
+                cetus.sendExtensionMessage("timerDetectResult", {
+                    count: res.count,
+                    results: res.results
+                });
             });
 
             break;

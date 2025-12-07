@@ -313,6 +313,7 @@ class WindowInstance {
         this.pendingSearch = false;
         this.pendingStringSearch = false;
         this.pendingFunctionIndex = null;
+        this.pendingTimerDetect = false;
     }
 
     _popupConnect() {
@@ -455,6 +456,22 @@ class WindowInstance {
                     targetWindow.currentInstance().instanceData.stringForm.strMinLen = strMin;
 
                     targetWindow.pendingStringSearch = true;
+
+                    break;
+                case "detectTimers":
+                    const detDuration = msgBody.duration;
+                    const detStride = msgBody.stride;
+                    const detLower = msgBody.lower;
+                    const detUpper = msgBody.upper;
+
+                    currentInstance.sendContentMessage("detectTimers", {
+                        duration: detDuration,
+                        stride: detStride,
+                        lower: detLower,
+                        upper: detUpper
+                    });
+
+                    targetWindow.pendingTimerDetect = true;
 
                     break;
                 case "queryFunction":
@@ -852,6 +869,31 @@ chrome.runtime.onMessage.addListener(function(msgRaw, msgSender) {
             targetWindow.passthruPopupMessage(msg);
 
             targetWindow.pendingStringSearch = false;
+
+            break;
+        case "timerDetectResult":
+            if (!targetWindow.pendingTimerDetect) {
+                return true;
+            }
+
+            const tCount = msgBody.count;
+            const tResults = msgBody.results;
+
+            if (typeof tCount !== "number" || typeof tResults !== "object") {
+                return true;
+            }
+
+            // All keys in resultObject should be numeric. If not, toss the whole thing
+            for (let entry in tResults) {
+                if (bigintIsNaN(entry)) {
+                    return true;
+                }
+            }
+
+            // Passthrough to popup
+            targetWindow.passthruPopupMessage(msg);
+
+            targetWindow.pendingTimerDetect = false;
 
             break;
         case "queryFunctionResult":
