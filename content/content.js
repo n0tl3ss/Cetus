@@ -27,16 +27,26 @@ chrome.runtime.onMessage.addListener(function(msg) {
 });
 
 const injectScript = function(scriptUrl) {
-    const newScript = document.createElement('script');
+    return new Promise(function(resolve, reject) {
+        const newScript = document.createElement('script');
 
-    newScript.src = chrome.extension.getURL(scriptUrl);
+        newScript.src = chrome.extension.getURL(scriptUrl);
 
-    //(document.head||document.documentElement).appendChild(newScript);
-    const injectElement = document.head || document.documentElement;
-    injectElement.insertBefore(newScript, injectElement.firstChild);
-    newScript.onload = function() {
-        newScript.parentNode.removeChild(newScript);
-    };
+        // Ensure deterministic execution order for dynamically injected scripts
+        newScript.async = false;
+        newScript.defer = false;
+
+        const injectElement = document.head || document.documentElement;
+        injectElement.insertBefore(newScript, injectElement.firstChild);
+
+        newScript.onload = function() {
+            try { newScript.parentNode.removeChild(newScript); } catch (e) {}
+            resolve();
+        };
+        newScript.onerror = function(err) {
+            reject(err);
+        };
+    });
 };
 
 const injectCode = function(codeToExecute) {
@@ -139,9 +149,14 @@ const cetusCallbacks = ${allCallbacksStr};
         }
     }
 
-    injectScript("/shared/utils.js");
-    injectScript("/shared/wail.min.js/wail.min.js");
-    injectScript("/content/thirdparty/stacktrace/stacktrace.min.js");
-    injectScript("/content/cetus.js");
-    injectScript("/content/init.js");
+    (function() {
+        injectScript("/shared/utils.js")
+            .then(() => injectScript("/shared/wail.min.js/wail.min.js"))
+            .then(() => injectScript("/content/thirdparty/stacktrace/stacktrace.min.js"))
+            .then(() => injectScript("/content/cetus.js"))
+            .then(() => injectScript("/content/init.js"))
+            .catch((e) => {
+                console.error("Cetus script injection failed", e);
+            });
+    })();
 });
