@@ -363,15 +363,19 @@ const bgMessageListener = function(msgRaw) {
                 return true;
             }
 
-            // Initialize/maintain diff baseline captured on first snapshot result
+            // Initialize/maintain diff baseline captured exactly on the snapshot result
             let baselineObj = undefined;
             if (typeof window !== "undefined" && window._cetusDiffActive) {
-                if (!window._cetusDiffBaselineSet) {
-                    // First diff result after Snapshot: store baseline mapping
+                if (window._cetusPendingSnapshot === true) {
+                    // Capture baseline from this snapshot result, then suppress baseline rendering for this paint
                     window._cetusDiffBaseline = resultObject;
                     window._cetusDiffBaselineSet = true;
+                    window._cetusPendingSnapshot = false;
+                    baselineObj = undefined; // do not render baseline on the snapshot result set
+                } else if (window._cetusDiffBaselineSet) {
+                    // On subsequent filters, provide the stored baseline for rendering
+                    baselineObj = window._cetusDiffBaseline;
                 }
-                baselineObj = window._cetusDiffBaseline;
             }
 
             // Update the Search tab (pass baseline if available)

@@ -60,6 +60,14 @@ document.getElementById('restartBtn').onclick = function(e) {
         window._cetusDiffSnapTaken = false;
         window._cetusDiffBaseline = undefined;
         window._cetusDiffBaselineSet = false;
+        window._cetusPendingSnapshot = false;
+    }
+    if (typeof window !== 'undefined') {
+        window._cetusDiffActive = false;
+        window._cetusDiffSnapTaken = false;
+        window._cetusDiffBaseline = undefined;
+        window._cetusDiffBaselineSet = false;
+        window._cetusPendingSnapshot = false;
     }
     if (typeof window !== 'undefined') {
         window._cetusDiffActive = false;
@@ -297,7 +305,10 @@ const diffSend = function(compare) {
         } else {
             if (searchTitle) searchTitle.innerText = 'Snapshot taken';
             if (diffTitle) diffTitle.innerText = 'Snapshot taken';
-            if (typeof window !== 'undefined') window._cetusDiffSnapTaken = true;
+            if (typeof window !== 'undefined') {
+                window._cetusDiffSnapTaken = true;
+                window._cetusPendingSnapshot = true; // mark that the next searchResult is the snapshot to capture as baseline
+            }
         }
     } else if (compare === 'lt') {
         if (diffTitle) diffTitle.innerText = 'Filtering decreased...';
