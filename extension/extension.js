@@ -363,21 +363,27 @@ const bgMessageListener = function(msgRaw) {
                 return true;
             }
 
-            // Initialize/maintain diff baseline captured exactly on the snapshot result
+            // Prefer baseline provided by content (snapshot/diff); fallback to local flags
             let baselineObj = undefined;
-            if (typeof window !== "undefined" && window._cetusDiffActive) {
+            if (typeof msgBody.baseline === "object" && msgBody.baseline !== null) {
+                baselineObj = msgBody.baseline;
+            } else if (typeof window !== "undefined" && window._cetusDiffActive) {
                 if (window._cetusPendingSnapshot === true) {
-                    // Capture baseline ONLY for addresses present in the snapshot result
-                    // (so baseline tracks the narrowed set going forward)
-                    window._cetusDiffBaseline = resultObject;
+                    // Capture baseline ONLY for addresses present in the snapshot result (freeze a copy)
+                    const snap = {};
+                    for (const addr in resultObject) {
+                        if (Object.prototype.hasOwnProperty.call(resultObject, addr)) {
+                            snap[addr] = resultObject[addr];
+                        }
+                    }
+                    window._cetusDiffBaseline = snap;
                     window._cetusDiffBaselineSet = true;
                     window._cetusPendingSnapshot = false;
 
-                    // Do not render baseline on the snapshot result itself
-                    baselineObj = undefined;
+                    // Render baseline on the snapshot pass too
+                    baselineObj = window._cetusDiffBaseline;
                 } else if (window._cetusDiffBaselineSet) {
                     // On subsequent filters, trim baseline to the currently-visible set
-                    // (no need to keep removed addresses)
                     const pruned = {};
                     for (const addr in resultObject) {
                         if (Object.prototype.hasOwnProperty.call(window._cetusDiffBaseline, addr)) {

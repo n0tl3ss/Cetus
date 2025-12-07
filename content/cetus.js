@@ -290,12 +290,14 @@ class Cetus {
     // TODO Should support unaligned searching
     _diffCompare(comparator, memType, lowerBoundIndex, upperBoundIndex) {
         const memory = this.alignedMemory(memType);
+        let baselineMap = {};
 
         if (Object.keys(this._searchSubset).length == 0) {
             for (let i = lowerBoundIndex; i < upperBoundIndex; i++) {
                 if (comparator(memory[i], this._savedMemory[i]) == true) {
                     const realAddress = indexToRealAddress(i, memType);
                     this._searchSubset[realAddress] = memory[i];
+                    baselineMap[realAddress] = this._savedMemory[i];
                 }
             }
         }
@@ -309,6 +311,7 @@ class Cetus {
                 }
                 else {
                     this._searchSubset[entryAddr] = memory[entryIndex];
+                    baselineMap[entryAddr] = this._savedMemory[entryAddr];
                 }
             }
         }
@@ -319,13 +322,14 @@ class Cetus {
 
         searchObj.count = Object.keys(this._searchSubset).length;
 
-        // If we try to send too much data to the extension, we'll probably freeze the tab. Instead, if there are too many search results we
-        // send the accurate number of results, but don't actually send the matches
+        // Include baseline aligned to the result set size to support Diff UI
         if (searchObj.count <= MAX_SEARCH_RESULTS) {
             searchObj.results = this._searchSubset;
+            searchObj.baseline = baselineMap;
         }
         else {
             searchObj.results = [];
+            searchObj.baseline = {};
         }
 
         return searchObj;
@@ -407,19 +411,17 @@ class Cetus {
 
                 searchResults.count = this._savedMemory.length;
 
-                if (this._savedMemory.length <= MAX_SEARCH_RESULTS) {
-                    const realResults = {};
-
-                    for (let i = 0; i < this._savedMemory.length; i++) {
-                        const realAddress = indexToRealAddress(realLowerBoundIndex + i, searchMemType);
-                        realResults[realAddress] = this._savedMemory[i];
-                    }
-
-                    searchResults.results = realResults;
+                // Always include up to MAX_SEARCH_RESULTS baseline pairs, even if total is larger
+                const realResults = {};
+                const cap = Math.min(this._savedMemory.length, MAX_SEARCH_RESULTS);
+                for (let i = 0; i < cap; i++) {
+                    const realAddress = indexToRealAddress(realLowerBoundIndex + i, searchMemType);
+                    realResults[realAddress] = this._savedMemory[i];
                 }
-                else {
-                    searchResults.results = [];
-                }
+
+                searchResults.results = realResults;
+                // On snapshot pass, the baseline equals the saved snapshot values
+                searchResults.baseline = realResults;
             }
             else {
                 searchResults = this._diffCompare(comparator,
@@ -1411,8 +1413,10 @@ window.addEventListener("cetusMsgOut", function(msgRaw) {
 
             searchResultsCount = searchReturn.count;
             searchResults = searchReturn.results;
+            const baselineMap = searchReturn.baseline;
 
             let subset = {};
+            let baselineSubset = {};
 
             // We do not want to send too many results or we risk crashing the extension
             // If there are more than 100 results, only send 100 but send the real count
@@ -1420,18 +1424,25 @@ window.addEventListener("cetusMsgOut", function(msgRaw) {
                 for (let property in searchResults) {
                     subset[property] = searchResults[property];
 
+                    if (typeof baselineMap === "object" && baselineMap !== null && typeof baselineMap[property] !== "undefined") {
+                        baselineSubset[property] = baselineMap[property];
+                    }
+
                     if (Object.keys(subset).length >= 100) {
                         break;
                     }
                 }
 
                 searchResults = subset;
+            } else {
+                baselineSubset = baselineMap;
             }
 
             cetus.sendExtensionMessage("searchResult", {
                 count: searchResultsCount,
                 results: searchResults,
                 memType: searchMemType,
+                baseline: baselineSubset
             });
 
             break;

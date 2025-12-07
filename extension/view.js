@@ -157,6 +157,18 @@ document.getElementById('searchForm').onsubmit = function(e) {
         }
     }
 
+    // If the Search tab is used for differential workflow:
+    // - newParam === null indicates differential mode (snapshot/filters)
+    // - Mark Diff active; when compare === 'eq' and no baseline yet, flag next result as the snapshot baseline
+    if (newParam === null) {
+        if (typeof window !== 'undefined') {
+            window._cetusDiffActive = true;
+            if (compare === 'eq' && !window._cetusDiffBaselineSet) {
+                window._cetusPendingSnapshot = true;
+            }
+        }
+    }
+
 	// TODO Make consistent with background.js
 	extension.sendBGMessage('search', {
 		memType: memType,
