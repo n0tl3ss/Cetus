@@ -592,6 +592,15 @@ TODO Rename these classes
         </div>
       </form>
     </div>
+
+    <div>
+      <div class="container">
+        <div class="restart-container">
+          <div id="diffResultsTitle" class="results-count"></div>
+        </div>
+      </div>
+      <div class="results" id="diffResults"></div>
+    </div>
   </div>
 
   <div id="tabCrypto" style="display:none" class="tabs-content">
@@ -599,7 +608,7 @@ TODO Rename these classes
       <form id="cryptoForm" class="form compare-form">
         <div class="form-field">
           Stride (bytes)
-          <input type="text" id="cryptoStride" name="stride" value="16" class="input" placeholder="16">
+          <input type="text" id="cryptoStride" name="stride" value="32" class="input" placeholder="32">
         </div>
         <div class="form-field">
           Range
@@ -611,6 +620,40 @@ TODO Rename these classes
         <button type="submit" class="input button">Detect AES/DES</button>
       </form>
     </div>
+
+    <div class="container">
+      <div class="form compare-form">
+        <div class="form-field">
+          <strong>Crypto Helpers</strong>
+          <div class="hint">Use S-Box address to find referencing functions, or scan near an address for key-like buffers.</div>
+        </div>
+
+        <div class="form-field">
+          S-Box Users
+          <div class="form-field--group">
+            <input type="text" id="cryptoSBoxAddr" placeholder="S-Box base address (decimal)" class="input">
+            <input type="text" id="cryptoSBoxWindow" placeholder="Window bytes (e.g. 512)" class="input">
+            <input type="text" id="cryptoSBoxMax" placeholder="Max funcs (e.g. 50)" class="input">
+          </div>
+          <div class="form-field--group">
+            <div class="button" id="cryptoFindUsers">Find S-Box Users</div>
+          </div>
+        </div>
+
+        <div class="form-field">
+          Key Scan Nearby
+          <div class="form-field--group">
+            <input type="text" id="cryptoKeyCenter" placeholder="Center address (decimal)" class="input">
+            <input type="text" id="cryptoKeyRadius" placeholder="Radius bytes (e.g. 8192)" class="input">
+            <input type="text" id="cryptoKeyStride" placeholder="Stride bytes (e.g. 16)" class="input">
+          </div>
+          <div class="form-field--group">
+            <div class="button" id="cryptoKeyScan">Scan Nearby Keys</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <div>
       <div class="container">
         <div class="restart-container">
@@ -618,6 +661,24 @@ TODO Rename these classes
         </div>
       </div>
       <div class="results" id="cryptoResults"></div>
+    </div>
+
+    <div>
+      <div class="container">
+        <div class="restart-container">
+          <div id="cryptoUsersTitle" class="results-count"></div>
+        </div>
+      </div>
+      <div class="results" id="cryptoUsersResults"></div>
+    </div>
+
+    <div>
+      <div class="container">
+        <div class="restart-container">
+          <div id="cryptoNearbyTitle" class="results-count"></div>
+        </div>
+      </div>
+      <div class="results" id="cryptoNearbyResults"></div>
     </div>
   </div>
   <div id="tabMemView" style="display:none" class="tabs-content">

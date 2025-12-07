@@ -53,6 +53,15 @@ document.getElementById('restartBtn').onclick = function(e) {
 	extension.sendBGMessage('restartSearch');
 
     clearSearchForm();
+
+    // Reset Diff workflow state and clear Diff results pane
+    if (typeof window !== 'undefined') {
+        window._cetusDiffActive = false;
+    }
+    const dt = document.getElementById('diffResultsTitle');
+    const dr = document.getElementById('diffResults');
+    if (dt) dt.innerHTML = '';
+    if (dr) dr.innerHTML = '';
 };
 
 // TODO We need to disable the comparison and type fields when doing a string/byte sequence search
@@ -254,6 +263,11 @@ const getDiffConfig = function() {
 const diffSend = function(compare) {
     const { memType, memAlign, lower, upper } = getDiffConfig();
 
+    // Mark Diff workflow active so we mirror results into Diff tab when they arrive
+    if (typeof window !== 'undefined') {
+        window._cetusDiffActive = true;
+    }
+
     // Differential search: param = null
     extension.sendBGMessage('search', {
         memType: memType,
@@ -264,9 +278,16 @@ const diffSend = function(compare) {
         upper: upper
     });
 
+    // Update titles to reflect action
+    const diffTitle = document.getElementById('diffResultsTitle');
+    const searchTitle = document.getElementById('resultsTitle');
     if (compare === 'eq') {
-        const title = document.getElementById('resultsTitle');
-        if (title) title.innerText = 'Snapshot taken';
+        if (searchTitle) searchTitle.innerText = 'Snapshot taken';
+        if (diffTitle) diffTitle.innerText = 'Snapshot taken';
+    } else if (compare === 'lt') {
+        if (diffTitle) diffTitle.innerText = 'Filtering decreased...';
+    } else if (compare === 'gt') {
+        if (diffTitle) diffTitle.innerText = 'Filtering increased...';
     }
 };
 
@@ -320,6 +341,54 @@ document.getElementById('cryptoForm') && (document.getElementById('cryptoForm').
     });
 
     document.getElementById('cryptoResultsTitle').innerText = 'Detecting...';
+});
+
+// Crypto helpers: find S-Box users
+document.getElementById('cryptoFindUsers') && (document.getElementById('cryptoFindUsers').onclick = function(e) {
+    e.preventDefault();
+    const addrField = document.getElementById('cryptoSBoxAddr');
+    const windowField = document.getElementById('cryptoSBoxWindow');
+    const maxField = document.getElementById('cryptoSBoxMax');
+
+    let addr = addrField ? parseInt(addrField.value) : NaN;
+    const win = windowField ? parseInt(windowField.value) : 512;
+    const max = maxField ? parseInt(maxField.value) : 50;
+
+    if (!Number.isFinite(addr)) return;
+
+    extension.sendBGMessage('cryptoFindSBoxUsers', {
+        addr: addr,
+        window: win,
+        max: max
+    });
+
+    const t = document.getElementById('cryptoUsersTitle');
+    if (t) t.innerText = 'Finding S-Box users...';
+});
+
+// Crypto helpers: key scan around an address
+document.getElementById('cryptoKeyScan') && (document.getElementById('cryptoKeyScan').onclick = function(e) {
+    e.preventDefault();
+    const centerField = document.getElementById('cryptoKeyCenter');
+    const radiusField = document.getElementById('cryptoKeyRadius');
+    const strideField = document.getElementById('cryptoKeyStride');
+
+    let center = centerField ? parseInt(centerField.value) : NaN;
+    let radius = radiusField ? parseInt(radiusField.value) : 8192;
+    let stride = strideField ? parseInt(strideField.value) : 16;
+
+    if (!Number.isFinite(center)) return;
+    if (!Number.isFinite(radius) || radius < 0) radius = 8192;
+    if (!Number.isFinite(stride) || stride < 8) stride = 16;
+
+    extension.sendBGMessage('cryptoKeyScanAround', {
+        center: center,
+        radius: radius,
+        stride: stride
+    });
+
+    const t = document.getElementById('cryptoNearbyTitle');
+    if (t) t.innerText = 'Scanning nearby...';
 });
 
 
@@ -830,6 +899,54 @@ const updateSearchResults = function(resultCount, resultObject, resultMemType) {
 	}
 };
 
+// Diff tab results mirroring of search results during diff workflow
+const updateDiffResults = function(resultCount, resultObject, resultMemType) {
+    document.getElementById('diffResultsTitle').innerText = resultCount + ' results';
+
+    const table = document.createElement('table');
+    const thead = table.createTHead();
+
+    let row = thead.insertRow();
+    let cell = row.insertCell();
+
+    cell.innerText = 'Address';
+    cell = row.insertCell();
+    cell.innerText = 'Value';
+    cell = row.insertCell();
+
+    const tbody = table.createTBody();
+
+    for (const address of Object.keys(resultObject)) {
+        const value = resultObject[address];
+        if (address == null || value == null) continue;
+
+        row = tbody.insertRow();
+
+        cell = row.insertCell();
+        cell.innerText = toHex(address);
+
+        cell = row.insertCell();
+        if (bigintIsNaN(value)) {
+            cell.innerText = value;
+        } else {
+            cell.innerText = formatValue(value, resultMemType);
+        }
+
+        cell = row.insertCell();
+        const saveButton = createSaveButton(address);
+        cell.appendChild(saveButton);
+    }
+
+    document.getElementById('diffResults').innerHTML = '';
+    document.getElementById('diffResults').appendChild(table);
+
+    const buttons = document.getElementsByName('saveBtn');
+    for (let i = 0; i < buttons.length; i++) {
+        const button = buttons[i];
+        button.onclick = saveButtonClick;
+    }
+};
+
 const updateStringSearchResults = function(resultCount, resultObject) {
 	document.getElementById('strResultsTitle').innerText = resultCount + ' results';
 
@@ -994,6 +1111,107 @@ const updateCryptoResults = function(resultCount, resultObject) {
         button.onclick = saveButtonClick;
     }
 }
+
+const updateCryptoUsersResults = function(users, sboxAddr) {
+    const title = document.getElementById('cryptoUsersTitle');
+    if (title) {
+        const baseText = Array.isArray(users) ? users.length + ' functions' : '0 functions';
+        title.innerText = sboxAddr ? baseText + ' referencing S-Box @ ' + toHex(sboxAddr) : baseText + ' referencing S-Box';
+    }
+
+    const table = document.createElement('table');
+    const thead = table.createTHead();
+
+    let row = thead.insertRow();
+    let cell = row.insertCell();
+    cell.innerText = 'Func Index';
+    cell = row.insertCell();
+    cell.innerText = 'Actions';
+
+    const tbody = table.createTBody();
+
+    if (Array.isArray(users)) {
+        for (let i = 0; i < users.length; i++) {
+            const idx = users[i];
+            row = tbody.insertRow();
+
+            cell = row.insertCell();
+            cell.innerText = idx;
+
+            cell = row.insertCell();
+            const btn = document.createElement('button');
+            btn.className = 'button';
+            btn.innerText = 'Disassemble';
+            btn.onclick = function(e) {
+                extension.sendBGMessage('queryFunction', { index: String(idx) });
+            };
+            cell.appendChild(btn);
+        }
+    }
+
+    const container = document.getElementById('cryptoUsersResults');
+    if (container) {
+        container.innerHTML = '';
+        container.appendChild(table);
+    }
+};
+
+const updateCryptoNearbyResults = function(resultCount, resultObject) {
+    const title = document.getElementById('cryptoNearbyTitle');
+    if (title) title.innerText = resultCount + ' candidates';
+
+    // Use i8 to anchor addresses; same style as updateCryptoResults
+    extension.searchMemType = 'i8';
+
+    const table = document.createElement('table');
+    const thead = table.createTHead();
+
+    let row = thead.insertRow();
+    let cell = row.insertCell();
+    cell.innerText = 'Address';
+    cell = row.insertCell();
+    cell.innerText = 'Len';
+    cell = row.insertCell();
+    cell.innerText = 'Entropy';
+    cell = row.insertCell();
+
+    const tbody = table.createTBody();
+
+    for (const address of Object.keys(resultObject)) {
+        const entry = resultObject[address];
+        if (address == null || entry == null) continue;
+
+        const len = typeof entry.len === 'number' ? entry.len : '';
+        const entropy = typeof entry.entropy === 'number' ? entry.entropy : null;
+
+        row = tbody.insertRow();
+
+        cell = row.insertCell();
+        cell.innerText = toHex(address);
+
+        cell = row.insertCell();
+        cell.innerText = len;
+
+        cell = row.insertCell();
+        cell.innerText = (typeof entropy === 'number' && isFinite(entropy)) ? entropy.toFixed(3) : '';
+
+        cell = row.insertCell();
+        const saveButton = createSaveButton(address);
+        cell.appendChild(saveButton);
+    }
+
+    const container = document.getElementById('cryptoNearbyResults');
+    if (container) {
+        container.innerHTML = '';
+        container.appendChild(table);
+    }
+
+    const buttons = document.getElementsByName('saveBtn');
+    for (let i = 0; i < buttons.length; i++) {
+        const button = buttons[i];
+        button.onclick = saveButtonClick;
+    }
+};
 
 const updateBookmarkTable = function(bookmarks, wpFlags) {
 	const bookmarkMenu = document.getElementById('bookmarks');

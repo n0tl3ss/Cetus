@@ -363,7 +363,13 @@ const bgMessageListener = function(msgRaw) {
                 return true;
             }
 
+            // Always update the Search tab
             updateSearchResults(resultCount, resultObject, resultMemType);
+
+            // If Diff workflow is active, mirror results into the Diff tab
+            if (typeof window !== "undefined" && window._cetusDiffActive && typeof updateDiffResults === "function") {
+                updateDiffResults(resultCount, resultObject, resultMemType);
+            }
 
             break;
         case "updateBookmarks":
@@ -422,6 +428,22 @@ const bgMessageListener = function(msgRaw) {
 
             updateCryptoResults(cryptoCount, cryptoResults);
 
+            break;
+        case "cryptoSBoxUsersResult":
+            // users: array of function indices; addr: s-box base (optional)
+            if (typeof msgBody.users === "object") {
+                if (typeof updateCryptoUsersResults === "function") {
+                    updateCryptoUsersResults(msgBody.users, msgBody.addr);
+                }
+            }
+            break;
+        case "cryptoKeyCandidatesResult":
+            // count + results map like detectCrypto
+            if (typeof msgBody.count === "number" && typeof msgBody.results === "object") {
+                if (typeof updateCryptoNearbyResults === "function") {
+                    updateCryptoNearbyResults(msgBody.count, msgBody.results);
+                }
+            }
             break;
         case "queryFunctionResult":
             if (typeof msgBody.bytes !== "object") {

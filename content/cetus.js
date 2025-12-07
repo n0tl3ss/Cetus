@@ -1081,6 +1081,97 @@ class Cetus {
         return H;
     }
 
+    // ULEB128 encoder for scanning immediates in function bodies
+    _encodeULEB128(n) {
+        const out = [];
+        let value = (n >>> 0);
+        do {
+            let byte = value & 0x7F;
+            value >>>= 7;
+            if (value !== 0) byte |= 0x80;
+            out.push(byte);
+        } while (value !== 0);
+        return new Uint8Array(out);
+    }
+
+    // Find functions that reference an address (optionally within a small window) via i32.const immediates
+    _findFunctionsReferencingAddress(addr, windowBytes = 0, maxFuncs = 50) {
+        try {
+            if (this._functions === null) {
+                this._resolveFunctions();
+            }
+        } catch (_) {
+            // If buffer resolution isn't available, skip
+        }
+        if (!this._functions) return [];
+
+        const center = parseInt(addr);
+        if (!Number.isFinite(center) || center < 0) return [];
+
+        const tries = [center];
+        if (windowBytes > 0) {
+            const step = 16;
+            for (let d = step; d <= windowBytes; d += step) {
+                tries.push(center + d);
+                if (center - d >= 0) tries.push(center - d);
+            }
+        }
+
+        const candidates = new Set();
+        const keys = Object.keys(this._functions);
+        // Precompute all encoded needles
+        const needles = tries.map((v) => {
+            const enc = this._encodeULEB128(v);
+            return new Uint8Array([0x41, ...enc]); // 0x41 = i32.const
+        });
+
+        for (let i = 0; i < keys.length; i++) {
+            const idx = parseInt(keys[i]);
+            const bytes = this._functions[idx];
+            if (!(bytes instanceof Uint8Array)) continue;
+
+            // naive subsequence search
+            let found = false;
+            for (let n = 0; n < needles.length && !found; n++) {
+                const needle = needles[n];
+                for (let p = 0; p + needle.length <= bytes.length; p++) {
+                    let ok = true;
+                    for (let q = 0; q < needle.length; q++) {
+                        if (bytes[p + q] !== needle[q]) { ok = false; break; }
+                    }
+                    if (ok) { found = true; break; }
+                }
+            }
+
+            if (found) {
+                candidates.add(idx);
+                if (candidates.size >= maxFuncs) break;
+            }
+        }
+
+        return Array.from(candidates);
+    }
+
+    // Helper: Given an AES S-Box base address, list likely user functions
+    findSBoxUsers(sboxAddr, windowBytes = 512, maxFuncs = 50) {
+        if (bigintIsNaN(sboxAddr)) return [];
+        return this._findFunctionsReferencingAddress(parseInt(sboxAddr), windowBytes, maxFuncs);
+    }
+
+    // Helper: Scan a window around an address for key-sized high-entropy blocks (uses detectCrypto internally)
+    keyScanAround(centerAddr, radius = 8192, strideBytes = 16) {
+        const memSize = this.getMemorySize();
+        let center = parseInt(centerAddr);
+        if (!Number.isFinite(center)) return { count: 0, results: {} };
+
+        let lb = center - parseInt(radius);
+        let ub = center + parseInt(radius);
+        if (isNaN(lb) || lb < 0) lb = 0;
+        if (isNaN(ub) || ub >= memSize) ub = memSize - 1;
+
+        return this.detectCrypto(strideBytes, lb, ub);
+    }
+
     // Heuristic crypto artifact/key detection (DES/AES sizes + AES S-Box)
     detectCrypto(strideBytes = 16, lowerBound = 0, upperBound = 0xFFFFFFFF) {
         const mem = this.unalignedMemory();
@@ -1411,6 +1502,40 @@ window.addEventListener("cetusMsgOut", function(msgRaw) {
             cetus.sendExtensionMessage("cryptoDetectResult", {
                 count: cryptoRes.count,
                 results: cryptoRes.results
+            });
+            break;
+        case "cryptoFindSBoxUsers":
+            const sbAddr = parseInt(msgBody.addr);
+            const sbWin = parseInt(msgBody.window) || 512;
+            const sbMax = parseInt(msgBody.max) || 50;
+
+            if (!Number.isFinite(sbAddr)) {
+                cetus.sendExtensionMessage("cryptoSBoxUsersResult", { addr: msgBody.addr, users: [] });
+                break;
+            }
+
+            const users = cetus.findSBoxUsers(sbAddr, sbWin, sbMax);
+            cetus.sendExtensionMessage("cryptoSBoxUsersResult", {
+                addr: sbAddr,
+                users: users
+            });
+            break;
+        case "cryptoKeyScanAround":
+            const kCenter = parseInt(msgBody.center);
+            const kRadius = parseInt(msgBody.radius) || 8192;
+            const kStride = parseInt(msgBody.stride) || 16;
+
+            if (!Number.isFinite(kCenter)) {
+                cetus.sendExtensionMessage("cryptoKeyCandidatesResult", { center: msgBody.center, radius: kRadius, count: 0, results: {} });
+                break;
+            }
+
+            const nearKeys = cetus.keyScanAround(kCenter, kRadius, kStride);
+            cetus.sendExtensionMessage("cryptoKeyCandidatesResult", {
+                center: kCenter,
+                radius: kRadius,
+                count: nearKeys.count,
+                results: nearKeys.results
             });
             break;
         case "modifyMemory":

@@ -934,6 +934,25 @@ chrome.runtime.onMessage.addListener(function(msgRaw, msgSender) {
             targetWindow.pendingCryptoDetect = false;
 
             break;
+        case "cryptoSBoxUsersResult":
+            // passthrough list of function indices referencing S-Box region
+            if (typeof msgBody.users !== "object") {
+                return true;
+            }
+            targetWindow.passthruPopupMessage(msg);
+            break;
+        case "cryptoKeyCandidatesResult":
+            // passthrough key-like buffer scan near a center address
+            if (typeof msgBody.count !== "number" || typeof msgBody.results !== "object") {
+                return true;
+            }
+            for (let entry in msgBody.results) {
+                if (bigintIsNaN(entry)) {
+                    return true;
+                }
+            }
+            targetWindow.passthruPopupMessage(msg);
+            break;
         case "queryFunctionResult":
             if (typeof msgBody.bytes !== "object") {
                 return true;
