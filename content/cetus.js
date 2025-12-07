@@ -969,6 +969,66 @@ class Cetus {
             }
         }
 
+        // If nothing matched ±1.0/s within tolerance, retry with wider tolerance,
+        // then fallback to generic monotonic negative/positive rates (unknown magnitude).
+        if (candidates.length === 0) {
+            // Wider tolerance around ±1.0
+            const tol2 = 0.35;
+            for (const addrStr of Object.keys(startValues)) {
+                const addr = parseInt(addrStr);
+                const idx = realAddressToIndex(addr, memTypeStr);
+                if (idx < 0 || idx >= mem.length) continue;
+
+                const v0 = startValues[addr];
+                const v1 = mem[idx];
+                if (!Number.isFinite(v1)) continue;
+
+                const rate2 = (v1 - v0) / dt;
+
+                const dUp2 = Math.abs(rate2 - 1.0);
+                const dDown2 = Math.abs(rate2 + 1.0);
+
+                if (dUp2 <= tol2 || dDown2 <= tol2) {
+                    const behavior = (dUp2 <= dDown2) ? "up(+1/s)" : "down(-1/s)";
+                    const score = Math.min(dUp2, dDown2);
+                    candidates.push({ addr, value: v1, rate: rate2, behavior, score });
+                }
+            }
+        }
+
+        if (candidates.length === 0) {
+            // Fallback: collect monotonic-like rates with unknown magnitude.
+            const alt = [];
+            const minRate = 0.01; // minimum magnitude (units per second) to consider meaningful
+            for (const addrStr of Object.keys(startValues)) {
+                const addr = parseInt(addrStr);
+                const idx = realAddressToIndex(addr, memTypeStr);
+                if (idx < 0 || idx >= mem.length) continue;
+
+                const v0 = startValues[addr];
+                const v1 = mem[idx];
+                if (!Number.isFinite(v1)) continue;
+
+                const r = (v1 - v0) / dt;
+                if (!Number.isFinite(r)) continue;
+
+                if (Math.abs(r) >= minRate) {
+                    const behavior = (r >= 0) ? `up(${r.toFixed(3)}/s)` : `down(${r.toFixed(3)}/s)`;
+                    // Score by closeness to 1.0/s; if not close, we'll sort by magnitude next
+                    alt.push({ addr, value: v1, rate: r, behavior, score: Math.abs(Math.abs(r) - 1.0) });
+                }
+            }
+
+            // Prefer rates closest to 1.0/s (if any), then by larger magnitude
+            alt.sort((a, b) => (a.score - b.score) || (Math.abs(b.rate) - Math.abs(a.rate)));
+
+            // Move top alt into candidates (cap will be applied later)
+            for (let i = 0; i < alt.length; i++) {
+                candidates.push(alt[i]);
+                if (candidates.length >= 200) break;
+            }
+        }
+
         // Sort by closeness to +/-1.0
         candidates.sort((a, b) => a.score - b.score);
 
