@@ -367,13 +367,24 @@ const bgMessageListener = function(msgRaw) {
             let baselineObj = undefined;
             if (typeof window !== "undefined" && window._cetusDiffActive) {
                 if (window._cetusPendingSnapshot === true) {
-                    // Capture baseline from this snapshot result, then suppress baseline rendering for this paint
+                    // Capture baseline ONLY for addresses present in the snapshot result
+                    // (so baseline tracks the narrowed set going forward)
                     window._cetusDiffBaseline = resultObject;
                     window._cetusDiffBaselineSet = true;
                     window._cetusPendingSnapshot = false;
-                    baselineObj = undefined; // do not render baseline on the snapshot result set
+
+                    // Do not render baseline on the snapshot result itself
+                    baselineObj = undefined;
                 } else if (window._cetusDiffBaselineSet) {
-                    // On subsequent filters, provide the stored baseline for rendering
+                    // On subsequent filters, trim baseline to the currently-visible set
+                    // (no need to keep removed addresses)
+                    const pruned = {};
+                    for (const addr in resultObject) {
+                        if (Object.prototype.hasOwnProperty.call(window._cetusDiffBaseline, addr)) {
+                            pruned[addr] = window._cetusDiffBaseline[addr];
+                        }
+                    }
+                    window._cetusDiffBaseline = pruned;
                     baselineObj = window._cetusDiffBaseline;
                 }
             }
