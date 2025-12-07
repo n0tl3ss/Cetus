@@ -57,6 +57,7 @@ document.getElementById('restartBtn').onclick = function(e) {
     // Reset Diff workflow state and clear Diff results pane
     if (typeof window !== 'undefined') {
         window._cetusDiffActive = false;
+        window._cetusDiffSnapTaken = false;
     }
     const dt = document.getElementById('diffResultsTitle');
     const dr = document.getElementById('diffResults');
@@ -282,8 +283,14 @@ const diffSend = function(compare) {
     const diffTitle = document.getElementById('diffResultsTitle');
     const searchTitle = document.getElementById('resultsTitle');
     if (compare === 'eq') {
-        if (searchTitle) searchTitle.innerText = 'Snapshot taken';
-        if (diffTitle) diffTitle.innerText = 'Snapshot taken';
+        // First eq acts as snapshot; subsequent eq filters to equal
+        if (typeof window !== 'undefined' && window._cetusDiffSnapTaken) {
+            if (diffTitle) diffTitle.innerText = 'Filtering equal...';
+        } else {
+            if (searchTitle) searchTitle.innerText = 'Snapshot taken';
+            if (diffTitle) diffTitle.innerText = 'Snapshot taken';
+            if (typeof window !== 'undefined') window._cetusDiffSnapTaken = true;
+        }
     } else if (compare === 'lt') {
         if (diffTitle) diffTitle.innerText = 'Filtering decreased...';
     } else if (compare === 'gt') {
@@ -306,10 +313,27 @@ document.getElementById('diffInc') && (document.getElementById('diffInc').onclic
     diffSend('gt');
 });
 
+// Optional equal filter (post-snapshot)
+document.getElementById('diffEq') && (document.getElementById('diffEq').onclick = function(e) {
+    e.preventDefault();
+    diffSend('eq');
+});
+
 document.getElementById('diffReset') && (document.getElementById('diffReset').onclick = function(e) {
     e.preventDefault();
     extension.sendBGMessage('restartSearch');
     clearSearchForm();
+
+    // Clear Diff workflow state and results
+    if (typeof window !== 'undefined') {
+        window._cetusDiffActive = false;
+        window._cetusDiffSnapTaken = false;
+    }
+    const diffTitle = document.getElementById('diffResultsTitle');
+    const diffRes = document.getElementById('diffResults');
+    if (diffTitle) diffTitle.innerHTML = '';
+    if (diffRes) diffRes.innerHTML = '';
+
     const title = document.getElementById('resultsTitle');
     if (title) title.innerText = 'Search reset';
 });
