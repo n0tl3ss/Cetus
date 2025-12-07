@@ -217,6 +217,74 @@ document.getElementById('timerForm') && (document.getElementById('timerForm').on
     document.getElementById('timerResultsTitle').innerText = 'Detecting...';
 });
 
+/**
+ * Timer Narrowing (Diff Search)
+ * - Snapshot: take baseline (param = null; first diff pass stores slice)
+ * - Filter Decreased: current < saved (comparison 'lt')
+ * - Filter Increased: current > saved (comparison 'gt')
+ * - Reset: clears differential state
+ * Results will appear in the Search tab (existing UI), capped to 100 entries.
+ * Default memType=f32, aligned=true. Range can be set via timerDiffLower/Upper inputs.
+ */
+const getTimerDiffRange = function() {
+    const lowerField = document.getElementById('timerDiffLower');
+    const upperField = document.getElementById('timerDiffUpper');
+
+    let lower = lowerField ? lowerField.value : '';
+    let upper = upperField ? upperField.value : '';
+
+    if (lower == '' || bigintIsNaN(lower)) {
+        lower = 0;
+    }
+    if (upper == '' || bigintIsNaN(upper)) {
+        upper = 0xffffffff;
+    }
+    return { lower, upper };
+};
+
+const timerDiffSend = function(compare) {
+    const { lower, upper } = getTimerDiffRange();
+
+    // Differential search: param = null; memType f32; aligned true
+    extension.sendBGMessage('search', {
+        memType: 'f32',
+        memAlign: true,
+        compare: compare,
+        param: null,
+        lower: lower,
+        upper: upper
+    });
+
+    if (compare === 'eq') {
+        // First pass stores a snapshot; inform the user
+        const title = document.getElementById('resultsTitle');
+        if (title) title.innerText = 'Snapshot taken';
+    }
+};
+
+document.getElementById('timerDiffSnapshot') && (document.getElementById('timerDiffSnapshot').onclick = function(e) {
+    e.preventDefault();
+    timerDiffSend('eq');
+});
+
+document.getElementById('timerDiffDec') && (document.getElementById('timerDiffDec').onclick = function(e) {
+    e.preventDefault();
+    timerDiffSend('lt');
+});
+
+document.getElementById('timerDiffInc') && (document.getElementById('timerDiffInc').onclick = function(e) {
+    e.preventDefault();
+    timerDiffSend('gt');
+});
+
+document.getElementById('timerDiffReset') && (document.getElementById('timerDiffReset').onclick = function(e) {
+    e.preventDefault();
+    extension.sendBGMessage('restartSearch');
+    clearSearchForm();
+    const title = document.getElementById('resultsTitle');
+    if (title) title.innerText = 'Search reset';
+});
+
 document.getElementById('cryptoForm') && (document.getElementById('cryptoForm').onsubmit = function(e) {
     e.preventDefault();
 

@@ -523,6 +523,29 @@ TODO Rename these classes
         <button type="submit" class="input button">Detect</button>
       </form>
     </div>
+
+    <div class="container">
+      <div class="form compare-form">
+        <div class="form-field">
+          <strong>Timer Narrowing (Diff Search)</strong>
+          <div class="hint">Snapshot now, then Filter Decreased after a few seconds of gameplay; after picking up time, use Filter Increased. Results are displayed on the Search tab (you can bookmark and freeze from there).</div>
+        </div>
+        <div class="form-field">
+          Range
+          <div class="form-field--group">
+            <input type="text" id="timerDiffLower" name="lower" placeholder="From 0" class="input">
+            <input type="text" id="timerDiffUpper" name="upper" placeholder="To 0xFFFFFFFF" class="input">
+          </div>
+        </div>
+        <div class="form-field--group">
+          <div class="button" id="timerDiffSnapshot">Snapshot</div>
+          <div class="button" id="timerDiffDec">Filter Decreased</div>
+          <div class="button" id="timerDiffInc">Filter Increased</div>
+          <div class="button" id="timerDiffReset">Reset</div>
+        </div>
+      </div>
+    </div>
+
     <div>
       <div class="container">
         <div class="restart-container">
