@@ -14,147 +14,227 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+// Small helpers to avoid null deref when a tab doesn't exist on a given page
+const setDisplay = function(id, show) {
+    const el = document.getElementById(id);
+    if (el) el.style.display = show ? 'block' : 'none';
+};
+
+const setActive = function(id, active) {
+    const el = document.getElementById(id);
+    if (el) el.className = active ? 'tabs-item is-active' : 'tabs-item';
+};
+
 // Navigation logic
 const changeTab = function(id) {
     switch (id) {
         case "tabSearchButton":
-            document.getElementById('tabSearch').style.display = 'block';
-            document.getElementById('tabStrings').style.display = 'none';
-            document.getElementById('tabPatch').style.display = 'none';
-            document.getElementById('tabSpeedHack').style.display = 'none';
-            document.getElementById('tabBookmarks').style.display = 'none';
-            document.getElementById('tabMemView').style.display = 'none';
+            setDisplay('tabSearch', true);
+            setDisplay('tabStrings', false);
+            setDisplay('tabPatch', false);
+            setDisplay('tabSpeedHack', false);
+            setDisplay('tabBookmarks', false);
+            setDisplay('tabMemView', false);
+            setDisplay('tabTimers', false);
+            setDisplay('tabCrypto', false);
+            setDisplay('tabDiff', false);
 
-            document.getElementById('liTabSearch').className = 'tabs-item is-active';
-            document.getElementById('liTabStrings').className = 'tabs-item';
-            document.getElementById('liTabPatch').className = 'tabs-item';
-            document.getElementById('liTabSpeedHack').className = 'tabs-item';
-            document.getElementById('liTabBookmarks').className = 'tabs-item';
-            document.getElementById('liTabMemView').className = 'tabs-item';
+            setActive('liTabSearch', true);
+            setActive('liTabStrings', false);
+            setActive('liTabPatch', false);
+            setActive('liTabSpeedHack', false);
+            setActive('liTabBookmarks', false);
+            setActive('liTabMemView', false);
+            setActive('liTabTimers', false);
+            setActive('liTabCrypto', false);
+            setActive('liTabDiff', false);
 
             break;
+
         case "tabStringsButton":
-            document.getElementById('tabSearch').style.display = 'none';
-            document.getElementById('tabStrings').style.display = 'block';
-            document.getElementById('tabPatch').style.display = 'none';
-            document.getElementById('tabSpeedHack').style.display = 'none';
-            document.getElementById('tabBookmarks').style.display = 'none';
-            document.getElementById('tabMemView').style.display = 'none';
+            setDisplay('tabSearch', false);
+            setDisplay('tabStrings', true);
+            setDisplay('tabPatch', false);
+            setDisplay('tabSpeedHack', false);
+            setDisplay('tabBookmarks', false);
+            setDisplay('tabMemView', false);
+            setDisplay('tabTimers', false);
+            setDisplay('tabCrypto', false);
+            setDisplay('tabDiff', false);
 
-            document.getElementById('liTabSearch').className = 'tabs-item';
-            document.getElementById('liTabStrings').className = 'tabs-item is-active';
-            document.getElementById('liTabPatch').className = 'tabs-item';
-            document.getElementById('liTabSpeedHack').className = 'tabs-item';
-            document.getElementById('liTabBookmarks').className = 'tabs-item';
-            document.getElementById('liTabMemView').className = 'tabs-item';
+            setActive('liTabSearch', false);
+            setActive('liTabStrings', true);
+            setActive('liTabPatch', false);
+            setActive('liTabSpeedHack', false);
+            setActive('liTabBookmarks', false);
+            setActive('liTabMemView', false);
+            setActive('liTabTimers', false);
+            setActive('liTabCrypto', false);
+            setActive('liTabDiff', false);
 
             break;
+
         case "tabPatchButton":
-            document.getElementById('tabSearch').style.display = 'none';
-            document.getElementById('tabStrings').style.display = 'none';
-            document.getElementById('tabPatch').style.display = 'block';
-            document.getElementById('tabSpeedHack').style.display = 'none';
-            document.getElementById('tabBookmarks').style.display = 'none';
-            document.getElementById('tabMemView').style.display = 'none';
+            setDisplay('tabSearch', false);
+            setDisplay('tabStrings', false);
+            setDisplay('tabPatch', true);
+            setDisplay('tabSpeedHack', false);
+            setDisplay('tabBookmarks', false);
+            setDisplay('tabMemView', false);
+            setDisplay('tabTimers', false);
+            setDisplay('tabCrypto', false);
+            setDisplay('tabDiff', false);
 
-            document.getElementById('liTabSearch').className = 'tabs-item';
-            document.getElementById('liTabStrings').className = 'tabs-item';
-            document.getElementById('liTabPatch').className = 'tabs-item is-active';
-            document.getElementById('liTabSpeedHack').className = 'tabs-item';
-            document.getElementById('liTabBookmarks').className = 'tabs-item';
-            document.getElementById('liTabMemView').className = 'tabs-item';
+            setActive('liTabSearch', false);
+            setActive('liTabStrings', false);
+            setActive('liTabPatch', true);
+            setActive('liTabSpeedHack', false);
+            setActive('liTabBookmarks', false);
+            setActive('liTabMemView', false);
+            setActive('liTabTimers', false);
+            setActive('liTabCrypto', false);
+            setActive('liTabDiff', false);
 
             break;
+
         case "tabSpeedHackButton":
-            document.getElementById('tabSearch').style.display = 'none';
-            document.getElementById('tabStrings').style.display = 'none';
-            document.getElementById('tabPatch').style.display = 'none';
-            document.getElementById('tabSpeedHack').style.display = 'block';
-            document.getElementById('tabBookmarks').style.display = 'none';
-            document.getElementById('tabMemView').style.display = 'none';
+            setDisplay('tabSearch', false);
+            setDisplay('tabStrings', false);
+            setDisplay('tabPatch', false);
+            setDisplay('tabSpeedHack', true);
+            setDisplay('tabBookmarks', false);
+            setDisplay('tabMemView', false);
+            setDisplay('tabTimers', false);
+            setDisplay('tabCrypto', false);
+            setDisplay('tabDiff', false);
 
-            document.getElementById('liTabSearch').className = 'tabs-item';
-            document.getElementById('liTabStrings').className = 'tabs-item';
-            document.getElementById('liTabPatch').className = 'tabs-item';
-            document.getElementById('liTabSpeedHack').className = 'tabs-item is-active';
-            document.getElementById('liTabBookmarks').className = 'tabs-item';
-            document.getElementById('liTabMemView').className = 'tabs-item';
+            setActive('liTabSearch', false);
+            setActive('liTabStrings', false);
+            setActive('liTabPatch', false);
+            setActive('liTabSpeedHack', true);
+            setActive('liTabBookmarks', false);
+            setActive('liTabMemView', false);
+            setActive('liTabTimers', false);
+            setActive('liTabCrypto', false);
+            setActive('liTabDiff', false);
 
             break;
+
         case "tabBookmarksButton":
-            document.getElementById('tabSearch').style.display = 'none';
-            document.getElementById('tabStrings').style.display = 'none';
-            document.getElementById('tabPatch').style.display = 'none';
-            document.getElementById('tabSpeedHack').style.display = 'none';
-            document.getElementById('tabBookmarks').style.display = 'block';
-            document.getElementById('tabMemView').style.display = 'none';
-            document.getElementById('tabTimers').style.display = 'none';
+            setDisplay('tabSearch', false);
+            setDisplay('tabStrings', false);
+            setDisplay('tabPatch', false);
+            setDisplay('tabSpeedHack', false);
+            setDisplay('tabBookmarks', true);
+            setDisplay('tabMemView', false);
+            setDisplay('tabTimers', false);
+            setDisplay('tabCrypto', false);
+            setDisplay('tabDiff', false);
 
-            document.getElementById('liTabSearch').className = 'tabs-item';
-            document.getElementById('liTabStrings').className = 'tabs-item';
-            document.getElementById('liTabPatch').className = 'tabs-item';
-            document.getElementById('liTabSpeedHack').className = 'tabs-item';
-            document.getElementById('liTabBookmarks').className = 'tabs-item is-active';
-            document.getElementById('liTabMemView').className = 'tabs-item';
-            document.getElementById('liTabTimers').className = 'tabs-item';
+            setActive('liTabSearch', false);
+            setActive('liTabStrings', false);
+            setActive('liTabPatch', false);
+            setActive('liTabSpeedHack', false);
+            setActive('liTabBookmarks', true);
+            setActive('liTabMemView', false);
+            setActive('liTabTimers', false);
+            setActive('liTabCrypto', false);
+            setActive('liTabDiff', false);
 
             break;
+
         case "tabTimersButton":
-            document.getElementById('tabSearch').style.display = 'none';
-            document.getElementById('tabStrings').style.display = 'none';
-            document.getElementById('tabPatch').style.display = 'none';
-            document.getElementById('tabSpeedHack').style.display = 'none';
-            document.getElementById('tabBookmarks').style.display = 'none';
-            document.getElementById('tabMemView').style.display = 'none';
-            document.getElementById('tabTimers').style.display = 'block';
-            document.getElementById('tabCrypto').style.display = 'none';
+            setDisplay('tabSearch', false);
+            setDisplay('tabStrings', false);
+            setDisplay('tabPatch', false);
+            setDisplay('tabSpeedHack', false);
+            setDisplay('tabBookmarks', false);
+            setDisplay('tabMemView', false);
+            setDisplay('tabTimers', true);
+            setDisplay('tabCrypto', false);
+            setDisplay('tabDiff', false);
 
-            document.getElementById('liTabSearch').className = 'tabs-item';
-            document.getElementById('liTabStrings').className = 'tabs-item';
-            document.getElementById('liTabPatch').className = 'tabs-item';
-            document.getElementById('liTabSpeedHack').className = 'tabs-item';
-            document.getElementById('liTabBookmarks').className = 'tabs-item';
-            document.getElementById('liTabMemView').className = 'tabs-item';
-            document.getElementById('liTabTimers').className = 'tabs-item is-active';
-            document.getElementById('liTabCrypto').className = 'tabs-item';
+            setActive('liTabSearch', false);
+            setActive('liTabStrings', false);
+            setActive('liTabPatch', false);
+            setActive('liTabSpeedHack', false);
+            setActive('liTabBookmarks', false);
+            setActive('liTabMemView', false);
+            setActive('liTabTimers', true);
+            setActive('liTabCrypto', false);
+            setActive('liTabDiff', false);
 
             break;
+
         case "tabCryptoButton":
-            document.getElementById('tabSearch').style.display = 'none';
-            document.getElementById('tabStrings').style.display = 'none';
-            document.getElementById('tabPatch').style.display = 'none';
-            document.getElementById('tabSpeedHack').style.display = 'none';
-            document.getElementById('tabBookmarks').style.display = 'none';
-            document.getElementById('tabMemView').style.display = 'none';
-            document.getElementById('tabTimers').style.display = 'none';
-            document.getElementById('tabCrypto').style.display = 'block';
+            setDisplay('tabSearch', false);
+            setDisplay('tabStrings', false);
+            setDisplay('tabPatch', false);
+            setDisplay('tabSpeedHack', false);
+            setDisplay('tabBookmarks', false);
+            setDisplay('tabMemView', false);
+            setDisplay('tabTimers', false);
+            setDisplay('tabCrypto', true);
+            setDisplay('tabDiff', false);
 
-            document.getElementById('liTabSearch').className = 'tabs-item';
-            document.getElementById('liTabStrings').className = 'tabs-item';
-            document.getElementById('liTabPatch').className = 'tabs-item';
-            document.getElementById('liTabSpeedHack').className = 'tabs-item';
-            document.getElementById('liTabBookmarks').className = 'tabs-item';
-            document.getElementById('liTabMemView').className = 'tabs-item';
-            document.getElementById('liTabTimers').className = 'tabs-item';
-            document.getElementById('liTabCrypto').className = 'tabs-item is-active';
+            setActive('liTabSearch', false);
+            setActive('liTabStrings', false);
+            setActive('liTabPatch', false);
+            setActive('liTabSpeedHack', false);
+            setActive('liTabBookmarks', false);
+            setActive('liTabMemView', false);
+            setActive('liTabTimers', false);
+            setActive('liTabCrypto', true);
+            setActive('liTabDiff', false);
 
             break;
+
+        case "tabDiffButton":
+            setDisplay('tabSearch', false);
+            setDisplay('tabStrings', false);
+            setDisplay('tabPatch', false);
+            setDisplay('tabSpeedHack', false);
+            setDisplay('tabBookmarks', false);
+            setDisplay('tabMemView', false);
+            setDisplay('tabTimers', false);
+            setDisplay('tabCrypto', false);
+            setDisplay('tabDiff', true);
+
+            setActive('liTabSearch', false);
+            setActive('liTabStrings', false);
+            setActive('liTabPatch', false);
+            setActive('liTabSpeedHack', false);
+            setActive('liTabBookmarks', false);
+            setActive('liTabMemView', false);
+            setActive('liTabTimers', false);
+            setActive('liTabCrypto', false);
+            setActive('liTabDiff', true);
+
+            break;
+
         case "tabMemViewButton":
-            document.getElementById('tabSearch').style.display = 'none';
-            document.getElementById('tabStrings').style.display = 'none';
-            document.getElementById('tabPatch').style.display = 'none';
-            document.getElementById('tabSpeedHack').style.display = 'none';
-            document.getElementById('tabBookmarks').style.display = 'none';
-            document.getElementById('tabMemView').style.display = 'block';
+            setDisplay('tabSearch', false);
+            setDisplay('tabStrings', false);
+            setDisplay('tabPatch', false);
+            setDisplay('tabSpeedHack', false);
+            setDisplay('tabBookmarks', false);
+            setDisplay('tabMemView', true);
+            setDisplay('tabTimers', false);
+            setDisplay('tabCrypto', false);
+            setDisplay('tabDiff', false);
 
-            document.getElementById('liTabSearch').className = 'tabs-item';
-            document.getElementById('liTabStrings').className = 'tabs-item';
-            document.getElementById('liTabPatch').className = 'tabs-item';
-            document.getElementById('liTabSpeedHack').className = 'tabs-item';
-            document.getElementById('liTabBookmarks').className = 'tabs-item';
-            document.getElementById('liTabMemView').className = 'tabs-item is-active';
+            setActive('liTabSearch', false);
+            setActive('liTabStrings', false);
+            setActive('liTabPatch', false);
+            setActive('liTabSpeedHack', false);
+            setActive('liTabBookmarks', false);
+            setActive('liTabMemView', true);
+            setActive('liTabTimers', false);
+            setActive('liTabCrypto', false);
+            setActive('liTabDiff', false);
 
             break;
+
         default:
             throw new Error("Bad tab ID " + id);
     }

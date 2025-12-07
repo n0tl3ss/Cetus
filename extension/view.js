@@ -218,17 +218,25 @@ document.getElementById('timerForm') && (document.getElementById('timerForm').on
 });
 
 /**
- * Timer Narrowing (Diff Search)
- * - Snapshot: take baseline (param = null; first diff pass stores slice)
- * - Filter Decreased: current < saved (comparison 'lt')
- * - Filter Increased: current > saved (comparison 'gt')
+ * Diff tab workflow (Increase/Decrease)
+ * - Snapshot: baseline (param=null; first diff pass stores slice)
+ * - Filter Decreased: current < saved ('lt')
+ * - Filter Increased: current > saved ('gt')
  * - Reset: clears differential state
- * Results will appear in the Search tab (existing UI), capped to 100 entries.
- * Default memType=f32, aligned=true. Range can be set via timerDiffLower/Upper inputs.
+ * Results appear in the existing Search tab table.
  */
-const getTimerDiffRange = function() {
-    const lowerField = document.getElementById('timerDiffLower');
-    const upperField = document.getElementById('timerDiffUpper');
+const getDiffConfig = function() {
+    // Type
+    const typeRadio = document.querySelector("input[name='diffType']:checked");
+    const memType = typeRadio ? typeRadio.value : 'f32';
+
+    // Alignment
+    const alignRadio = document.querySelector("input[name='diffAlignment']:checked");
+    const memAlign = alignRadio ? (alignRadio.value === 'aligned') : true;
+
+    // Range
+    const lowerField = document.getElementById('diffLower');
+    const upperField = document.getElementById('diffUpper');
 
     let lower = lowerField ? lowerField.value : '';
     let upper = upperField ? upperField.value : '';
@@ -239,16 +247,17 @@ const getTimerDiffRange = function() {
     if (upper == '' || bigintIsNaN(upper)) {
         upper = 0xffffffff;
     }
-    return { lower, upper };
+
+    return { memType, memAlign, lower, upper };
 };
 
-const timerDiffSend = function(compare) {
-    const { lower, upper } = getTimerDiffRange();
+const diffSend = function(compare) {
+    const { memType, memAlign, lower, upper } = getDiffConfig();
 
-    // Differential search: param = null; memType f32; aligned true
+    // Differential search: param = null
     extension.sendBGMessage('search', {
-        memType: 'f32',
-        memAlign: true,
+        memType: memType,
+        memAlign: memAlign,
         compare: compare,
         param: null,
         lower: lower,
@@ -256,28 +265,27 @@ const timerDiffSend = function(compare) {
     });
 
     if (compare === 'eq') {
-        // First pass stores a snapshot; inform the user
         const title = document.getElementById('resultsTitle');
         if (title) title.innerText = 'Snapshot taken';
     }
 };
 
-document.getElementById('timerDiffSnapshot') && (document.getElementById('timerDiffSnapshot').onclick = function(e) {
+document.getElementById('diffSnapshot') && (document.getElementById('diffSnapshot').onclick = function(e) {
     e.preventDefault();
-    timerDiffSend('eq');
+    diffSend('eq');
 });
 
-document.getElementById('timerDiffDec') && (document.getElementById('timerDiffDec').onclick = function(e) {
+document.getElementById('diffDec') && (document.getElementById('diffDec').onclick = function(e) {
     e.preventDefault();
-    timerDiffSend('lt');
+    diffSend('lt');
 });
 
-document.getElementById('timerDiffInc') && (document.getElementById('timerDiffInc').onclick = function(e) {
+document.getElementById('diffInc') && (document.getElementById('diffInc').onclick = function(e) {
     e.preventDefault();
-    timerDiffSend('gt');
+    diffSend('gt');
 });
 
-document.getElementById('timerDiffReset') && (document.getElementById('timerDiffReset').onclick = function(e) {
+document.getElementById('diffReset') && (document.getElementById('diffReset').onclick = function(e) {
     e.preventDefault();
     extension.sendBGMessage('restartSearch');
     clearSearchForm();

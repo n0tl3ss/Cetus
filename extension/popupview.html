@@ -91,6 +91,9 @@
     <div class="tabs-item" id="liTabTimers">
       <a href="#" name="tabButton" id="tabTimersButton">Timers</a>
     </div>
+    <div class="tabs-item" id="liTabDiff">
+      <a href="#" name="tabButton" id="tabDiffButton">Diff</a>
+    </div>
     <div class="tabs-item" id="liTabCrypto">
       <a href="#" name="tabButton" id="tabCryptoButton">Crypto</a>
     </div>
@@ -532,6 +535,65 @@ TODO Rename these classes
       <div class="results" id="timerResults"></div>
     </div>
   </div>
+
+  <div id="tabDiff" style="display:none" class="tabs-content">
+    <div class="container">
+      <form id="diffForm" class="form compare-form">
+        <div class="form-field">
+          <strong>Diff Scan (Increase/Decrease)</strong>
+          <div class="hint">Snapshot now, then after a few seconds click "Filter Decreased". After picking up time or causing an increase, click "Filter Increased". Results show on the Search tab.</div>
+        </div>
+
+        <div class="form-field">
+          Value Type
+          <div class="form-field--group">
+            <div class="radio">
+              <input type="radio" name="diffType" value="f32" class="radio-input" checked>
+              <div class="radio-body"><span></span>f32</div>
+            </div>
+            <div class="radio">
+              <input type="radio" name="diffType" value="i32" class="radio-input">
+              <div class="radio-body"><span></span>i32</div>
+            </div>
+            <div class="radio">
+              <input type="radio" name="diffType" value="f64" class="radio-input">
+              <div class="radio-body"><span></span>f64</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-field">
+          Only Aligned Addresses? (Faster but less accurate)
+          <div class="form-field--group">
+            <div class="radio">
+              <input type="radio" name="diffAlignment" value="aligned" class="radio-input" checked>
+              <div class="radio-body"><span></span>yes</div>
+            </div>
+            <div class="radio">
+              <input type="radio" name="diffAlignment" value="unaligned" class="radio-input">
+              <div class="radio-body"><span></span>no</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-field">
+          Range
+          <div class="form-field--group">
+            <input type="text" id="diffLower" name="lower" placeholder="From 0" class="input">
+            <input type="text" id="diffUpper" name="upper" placeholder="To 0xFFFFFFFF" class="input">
+          </div>
+        </div>
+
+        <div class="form-field--group">
+          <div class="button" id="diffSnapshot">Snapshot</div>
+          <div class="button" id="diffDec">Filter Decreased</div>
+          <div class="button" id="diffInc">Filter Increased</div>
+          <div class="button" id="diffReset">Reset</div>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <div id="tabCrypto" style="display:none" class="tabs-content">
     <div class="container">
       <form id="cryptoForm" class="form compare-form">
