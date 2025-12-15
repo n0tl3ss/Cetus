@@ -904,6 +904,74 @@ const disableSearchFormAlignment = function() {
     }
 };
 
+/**
+ * Timestamp scan chaining flag:
+ * After first pass (gte lower), trigger second pass (lte upper) automatically.
+ * We store context in window._tsPendingUpperPayload.
+ */
+document.getElementById('timestampsForm') && (document.getElementById('timestampsForm').onsubmit = function(e) {
+    e.preventDefault();
+
+    // Read type and unit
+    const typeRadio = document.querySelector("input[name='tsType']:checked");
+    const memType = typeRadio ? typeRadio.value : 'i32';
+    const unitRadio = document.querySelector("input[name='tsUnit']:checked");
+    const unit = unitRadio ? unitRadio.value : 's';
+
+    // Compute window based on unit
+    const nowVal = unit === 'ms' ? Date.now() : Math.floor(Date.now() / 1000);
+    const lowerVal = nowVal - (unit === 'ms' ? 30000 : 30);
+    const upperVal = nowVal + (unit === 'ms' ? 30000 : 30);
+
+    // Alignment
+    const alignRadio = document.querySelector("input[name='tsAlignment']:checked");
+    const memAlign = alignRadio ? (alignRadio.value === 'aligned') : true;
+
+    // Address range
+    const lowerField = document.getElementById('tsLower');
+    const upperField = document.getElementById('tsUpper');
+    let lowerAddr = lowerField ? lowerField.value : '';
+    let upperAddr = upperField ? upperField.value : '';
+
+    if (lowerAddr == '' || bigintIsNaN(lowerAddr)) lowerAddr = 0;
+    if (upperAddr == '' || bigintIsNaN(upperAddr)) upperAddr = 0xffffffff;
+
+    // Ensure bookmarks/actions use selected integer type
+    extension.searchMemType = memType;
+
+    // Reset any previous search to start clean
+    extension.sendBGMessage('restartSearch');
+
+    // Mark chaining for upper filter; stash payload
+    if (typeof window !== 'undefined') {
+        window._tsActive = true;
+        window._tsPendingUpperFilter = true;
+        window._tsPendingUpperPayload = {
+            memType: memType,
+            memAlign: memAlign,
+            upperParam: upperVal,
+            lower: lowerAddr,
+            upper: upperAddr
+        };
+    }
+
+    // First pass: gte lower
+    extension.sendBGMessage('search', {
+        memType: memType,
+        memAlign: memAlign,
+        compare: 'gte',
+        param: lowerVal,
+        lower: lowerAddr,
+        upper: upperAddr
+    });
+
+    const t = document.getElementById('tsResultsTitle');
+    if (t) {
+        let note = (unit === 'ms' && memType === 'i32') ? ' [warning: i32 + ms may overflow; prefer i64]' : '';
+        t.innerText = 'Scanning: >= ' + lowerVal + ' (now=' + nowVal + ' ' + unit + ')' + note;
+    }
+});
+
 const updateSearchResults = function(resultCount, resultObject, resultMemType, baselineObj) {
 	document.getElementById('resultsTitle').innerText = resultCount + ' results';
 	document.getElementById('restartBtn').disabled = false;
@@ -964,6 +1032,41 @@ const updateSearchResults = function(resultCount, resultObject, resultMemType, b
 
 	document.getElementById('results').innerHTML = '';
 	document.getElementById('results').appendChild(table);
+
+    // If timestamp scan chaining is active, trigger the upper filter now
+    if (typeof window !== 'undefined' && window._tsPendingUpperFilter) {
+        const payload = window._tsPendingUpperPayload || {};
+        const memType = payload.memType || 'i32';
+        const memAlign = typeof payload.memAlign === 'boolean' ? payload.memAlign : true;
+        const upperParam = typeof payload.upperParam === 'number' ? payload.upperParam : null;
+        const lowerAddr = payload.lower ?? 0;
+        const upperAddr = payload.upper ?? 0xffffffff;
+
+        if (upperParam !== null) {
+            extension.sendBGMessage('search', {
+                memType: memType,
+                memAlign: memAlign,
+                compare: 'lte',
+                param: upperParam,
+                lower: lowerAddr,
+                upper: upperAddr
+            });
+
+            const t = document.getElementById('tsResultsTitle');
+            if (t) t.innerText = 'Filtering: <= ' + upperParam;
+        }
+
+        // Clear chaining flag regardless, to avoid loops
+        window._tsPendingUpperFilter = false;
+        window._tsPendingUpperPayload = undefined;
+    }
+
+    // If timestamp scan completed, update Timestamps tab status and clear flag
+    if (typeof window !== 'undefined' && window._tsActive && !window._tsPendingUpperFilter) {
+        const t2 = document.getElementById('tsResultsTitle');
+        if (t2) t2.innerText = resultCount + ' results (±30s)';
+        window._tsActive = false;
+    }
 
 	const buttons = document.getElementsByName('saveBtn');
 	for (let i = 0; i < buttons.length; i++) {

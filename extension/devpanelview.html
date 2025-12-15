@@ -88,8 +88,11 @@
     <div class="tabs-item" id="liTabBookmarks">
       <a href="#" name="tabButton" id="tabBookmarksButton">Bookmarks</a>
     </div>
-    <div class="tabs-item" id="liTabTimers">
+    <div class="tabs-item" id="e ">
       <a href="#" name="tabButton" id="tabTimersButton">Timers</a>
+    </div>
+    <div class="tabs-item" id="liTabTimestamps">
+      <a href="#" name="tabButton" id="tabTimestampsButton">Timestamps</a>
     </div>
     <div class="tabs-item" id="liTabDiff">
       <a href="#" name="tabButton" id="tabDiffButton">Diff</a>
@@ -350,7 +353,7 @@
           </label>
           <input type="submit" id="functionSearchButton" class="button" value="Find a function" />
         </form>
-        <form id="functionFormSave">
+        <form id="functionPatchForm">
           <div class="patch-controls">
 <!--
 TODO Rename these classes
@@ -535,6 +538,78 @@ TODO Rename these classes
         </div>
       </div>
       <div class="results" id="timerResults"></div>
+    </div>
+  </div>
+
+  <div id="tabTimestamps" style="display:none" class="tabs-content">
+    <div class="container">
+      <form id="timestampsForm" class="form compare-form">
+        <div class="form-field">
+          <strong>Scan for UNIX timestamps within ±30s of now</strong>
+          <div class="hint">Scans for 32-bit/64-bit integer UNIX epoch timestamps within 30 seconds of the current time. Choose seconds or milliseconds.</div>
+        </div>
+
+        <div class="form-field">
+          Value Type
+          <div class="form-field--group">
+            <div class="radio">
+              <input type="radio" name="tsType" value="i32" class="radio-input" checked>
+              <div class="radio-body"><span></span>i32</div>
+            </div>
+            <div class="radio">
+              <input type="radio" name="tsType" value="i64" class="radio-input">
+              <div class="radio-body"><span></span>i64</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-field">
+          Time Unit
+          <div class="form-field--group">
+            <div class="radio">
+              <input type="radio" name="tsUnit" value="s" class="radio-input" checked>
+              <div class="radio-body"><span></span>seconds</div>
+            </div>
+            <div class="radio">
+              <input type="radio" name="tsUnit" value="ms" class="radio-input">
+              <div class="radio-body"><span></span>milliseconds</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-field">
+          Only Aligned Addresses? (Faster but less accurate)
+          <div class="form-field--group">
+            <div class="radio">
+              <input type="radio" name="tsAlignment" value="aligned" class="radio-input" checked>
+              <div class="radio-body"><span></span>yes</div>
+            </div>
+            <div class="radio">
+              <input type="radio" name="tsAlignment" value="unaligned" class="radio-input">
+              <div class="radio-body"><span></span>no</div>
+            </div>
+          </div>
+        </div>
+        <div class="form-field">
+          Range
+          <div class="form-field--group">
+            <input type="text" id="tsLower" name="lower" placeholder="From 0" class="input">
+            <input type="text" id="tsUpper" name="upper" placeholder="To 0xFFFFFFFF" class="input">
+          </div>
+        </div>
+        <button type="submit" class="input button">Scan Now ±30s</button>
+      </form>
+    </div>
+    <div>
+      <div class="container">
+        <div class="restart-container">
+          <div id="tsResultsTitle" class="results-count"></div>
+        </div>
+      </div>
+      <div class="results" id="tsResults"></div>
+      <div class="container">
+        <div class="hint">Results are also shown on the Search tab. Use the save icon to bookmark addresses.</div>
+      </div>
     </div>
   </div>
 
