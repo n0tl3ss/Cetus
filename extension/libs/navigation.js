@@ -27,6 +27,10 @@ const setActive = function(id, active) {
 
 // Navigation logic
 const changeTab = function(id) {
+    // Ensure Timestamps is hidden/inactive by default so legacy cases don't leave it visible
+    setDisplay('tabTimestamps', false);
+    setActive('liTabTimestamps', false);
+
     switch (id) {
         case "tabSearchButton":
             setDisplay('tabSearch', true);
@@ -163,6 +167,31 @@ const changeTab = function(id) {
             setActive('liTabTimers', true);
             setActive('liTabCrypto', false);
             setActive('liTabDiff', false);
+
+            break;
+
+        case "tabTimestampsButton":
+            setDisplay('tabSearch', false);
+            setDisplay('tabStrings', false);
+            setDisplay('tabPatch', false);
+            setDisplay('tabSpeedHack', false);
+            setDisplay('tabBookmarks', false);
+            setDisplay('tabMemView', false);
+            setDisplay('tabTimers', false);
+            setDisplay('tabCrypto', false);
+            setDisplay('tabDiff', false);
+            setDisplay('tabTimestamps', true);
+
+            setActive('liTabSearch', false);
+            setActive('liTabStrings', false);
+            setActive('liTabPatch', false);
+            setActive('liTabSpeedHack', false);
+            setActive('liTabBookmarks', false);
+            setActive('liTabMemView', false);
+            setActive('liTabTimers', false);
+            setActive('liTabCrypto', false);
+            setActive('liTabDiff', false);
+            setActive('liTabTimestamps', true);
 
             break;
 
